@@ -914,7 +914,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   const API_KEY = "crL7soo_6B8c1ZFrcqk-YTeMmf9YsZGF";
   const DRIVE_FILE_ID = "1bZxMIPCdT9k6Y1hr6fhshrz0mLrrjjsj";
   const DRIVE_FILE_URL = "https://drive.google.com/file/d/" + DRIVE_FILE_ID + "/view";
-  const POLL_MS = 10000;
+  const POLL_MS = 15000;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   const clone = (o) => (o == null ? o : JSON.parse(JSON.stringify(o)));
@@ -925,94 +925,182 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   async function api(action, params) {
     let lastErr = null;
     for (let attempt = 0; attempt < 3; attempt++) {
-      let res;
+      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 30000) : null;
       try {
-        res = await fetch(API_URL, {
-          method: "POST",
-          // text/plain keeps this a CORS "simple request" (no preflight,
-          // which Apps Script does not answer).
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(Object.assign({ key: API_KEY, action }, params || {})),
-          redirect: "follow",
-        });
+        let res;
+        try {
+          res = await fetch(API_URL, {
+            method: "POST",
+            // text/plain keeps this a CORS "simple request" (no preflight,
+            // which Apps Script does not answer).
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(Object.assign({ key: API_KEY, action }, params || {})),
+            redirect: "follow",
+            signal: ctrl ? ctrl.signal : undefined,
+          });
+        } catch (e) {
+          throw Object.assign(new Error(e && e.name === "AbortError" ? "El servidor tardó demasiado" : "Sin conexión con el servidor"), { code: "network", retry: true });
+        }
+        if (!res.ok) throw Object.assign(new Error("El servidor respondió HTTP " + res.status), { code: "http_" + res.status, retry: true });
+        const text = await res.text();
+        let j;
+        // Google sometimes answers with an HTML error page when it is
+        // overloaded: that's transient, so retry instead of failing.
+        try { j = JSON.parse(text); }
+        catch (e) { throw Object.assign(new Error("Google no respondió bien (servidor ocupado)"), { code: "bad_response", retry: true }); }
+        if (!j || !j.ok) throw Object.assign(new Error((j && j.error) || "Error del servidor"), { code: (j && j.code) || "server_error" });
+        return j;
       } catch (e) {
-        lastErr = Object.assign(new Error("Sin conexión con el servidor"), { code: "network" });
-        await sleep(700 * (attempt + 1));
-        continue;
+        lastErr = e;
+        if (!e.retry) throw e;
+        await sleep(800 * (attempt + 1));
+      } finally {
+        if (timer) clearTimeout(timer);
       }
-      if (!res.ok) {
-        lastErr = Object.assign(new Error("El servidor respondió HTTP " + res.status), { code: "http_" + res.status });
-        await sleep(700 * (attempt + 1));
-        continue;
-      }
-      let j;
-      try { j = await res.json(); }
-      catch (e) { throw Object.assign(new Error("Respuesta no válida del servidor"), { code: "bad_response" }); }
-      if (!j || !j.ok) throw Object.assign(new Error((j && j.error) || "Error del servidor"), { code: (j && j.code) || "server_error" });
-      return j;
     }
     throw lastErr;
   }
 
+  // The whole database is small (a few hundred rows at most), so the app
+  // keeps a local copy: ONE "dump" request loads everything, reads are
+  // answered from memory, writes go to the server and are mirrored locally
+  // at once, and a single poll every POLL_MS picks up other phones'
+  // changes. This keeps the load on Apps Script to ~1 request per poll per
+  // open phone instead of dozens (which Google throttles).
   function makeRemoteDb() {
+    let cache = null;         // Map<path, data>
+    let cacheAt = 0;
+    let inflight = null;
+    let writeGen = 0;         // bumps on every local write
+    let pendingWrites = 0;
     const listeners = new Set();
     let pollTimer = null;
+    let syncFailed = false;
+
     const docSnap = (id, exists, data) => ({ id, exists: !!exists, data: () => (exists ? clone(data) : undefined) });
     const qSnap = (docs) => {
       const list = docs.map((d) => docSnap(d.id, true, d.data));
       return { docs: list, size: list.length, empty: list.length === 0, forEach: (fn) => list.forEach(fn) };
     };
-    async function runListener(l) {
-      try {
-        const snap = await l.fetch();
-        const sig = JSON.stringify(snap.docs ? snap.docs.map((d) => [d.id, d.data()]) : [snap.exists, snap.data()]);
-        if (sig !== l.sig) { l.sig = sig; l.cb(snap); }
-      } catch (e) {
-        if (!l.errored && l.err) l.err(e);
-        l.errored = true;
-        return;
-      }
-      l.errored = false;
+
+    function sync() {
+      if (inflight) return inflight;
+      inflight = (async () => {
+        for (;;) {
+          const gen = writeGen;
+          const r = await api("dump");
+          // A write landed while this dump was in flight: its result may
+          // predate that write, so fetch again rather than roll it back.
+          if (gen !== writeGen || pendingWrites > 0) { await sleep(300); continue; }
+          const m = new Map();
+          for (const d of r.docs || []) m.set(String(d.path), d.data || {});
+          cache = m;
+          cacheAt = Date.now();
+          return;
+        }
+      })().finally(() => { inflight = null; });
+      return inflight;
     }
-    function refreshAll() { listeners.forEach((l) => runListener(l)); }
+    async function fresh() {
+      if (!cache || Date.now() - cacheAt > 3000) await sync();
+    }
+
+    function localGet(path) {
+      return cache && cache.has(path) ? { exists: true, data: cache.get(path) } : { exists: false, data: null };
+    }
+    // Same semantics as listCollection_ in Code.gs: direct children only,
+    // optional sort on one field (undefined first when ascending).
+    function localList(path, field, dir) {
+      const prefix = path + "/";
+      const docs = [];
+      if (cache) cache.forEach((data, p) => {
+        if (p.indexOf(prefix) !== 0) return;
+        const rest = p.slice(prefix.length);
+        if (rest.indexOf("/") !== -1) return;
+        docs.push({ id: rest, data });
+      });
+      if (field) {
+        const s = dir === "desc" ? -1 : 1;
+        docs.sort((a, b) => {
+          const av = a.data ? a.data[field] : undefined, bv = b.data ? b.data[field] : undefined;
+          if (av === undefined && bv === undefined) return 0;
+          if (av === undefined) return -1 * s;
+          if (bv === undefined) return 1 * s;
+          return av < bv ? -1 * s : av > bv ? 1 * s : 0;
+        });
+      }
+      return docs;
+    }
+
+    function runListener(l) {
+      let snap;
+      try { snap = l.compute(); } catch (e) { if (l.err) l.err(e); return; }
+      const sig = JSON.stringify(snap.docs ? snap.docs.map((d) => [d.id, d.data()]) : [snap.exists, snap.data()]);
+      if (sig !== l.sig) { l.sig = sig; l.cb(snap); }
+    }
+    function notifyAll() { listeners.forEach(runListener); }
+    async function poll() {
+      if (document.visibilityState !== "visible") return;
+      try {
+        await sync();
+        syncFailed = false;
+        notifyAll();
+      } catch (e) {
+        // Report a lost connection once, not on every poll.
+        if (!syncFailed) listeners.forEach((l) => { if (l.err) { l.err(e); } });
+        syncFailed = true;
+      }
+    }
     function ensurePolling() {
       if (pollTimer) return;
-      pollTimer = setInterval(() => { if (document.visibilityState === "visible") refreshAll(); }, POLL_MS);
-      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshAll(); });
-      window.addEventListener("online", refreshAll);
+      pollTimer = setInterval(poll, POLL_MS);
+      document.addEventListener("visibilitychange", poll);
+      window.addEventListener("online", poll);
     }
-    function listen(fetchFn, cb, err) {
-      const l = { fetch: fetchFn, cb, err, sig: null, errored: false };
+    function listen(compute, cb, err) {
+      const l = { compute, cb, err, sig: null };
       listeners.add(l);
       ensurePolling();
-      runListener(l);
+      fresh().then(() => { if (listeners.has(l)) runListener(l); })
+             .catch((e) => { if (err) err(e); });
       return () => listeners.delete(l);
     }
-    // After any local write, re-read right away so this screen (and the
-    // totals) reflect it without waiting for the next poll.
-    let writeTimer = null;
-    function afterWrite() { clearTimeout(writeTimer); writeTimer = setTimeout(refreshAll, 150); }
+
+    async function write(action, path, data) {
+      writeGen++;
+      pendingWrites++;
+      try {
+        await api(action, data === undefined ? { path } : { path, data });
+      } finally {
+        pendingWrites--;
+        writeGen++;
+      }
+      if (!cache) cache = new Map();
+      if (action === "setDoc") cache.set(path, clone(data) || {});
+      else if (action === "updateDoc") cache.set(path, Object.assign({}, cache.get(path) || {}, clone(data) || {}));
+      else if (action === "deleteDoc") cache.delete(path);
+      notifyAll();
+    }
 
     function doc(path) {
       const id = path.split("/").pop();
-      const get = async () => { const r = await api("getDoc", { path }); return docSnap(id, r.exists, r.data); };
+      const compute = () => { const r = localGet(path); return docSnap(id, r.exists, r.data); };
       return {
-        id, path, get,
-        set: async (data) => { await api("setDoc", { path, data: clone(data) || {} }); afterWrite(); },
-        update: async (data) => { await api("updateDoc", { path, data: clone(data) || {} }); afterWrite(); },
-        delete: async () => { await api("deleteDoc", { path }); afterWrite(); },
-        onSnapshot: (cb, err) => listen(get, cb, err),
+        id, path,
+        get: async () => { await fresh(); return compute(); },
+        set: (data) => write("setDoc", path, data || {}),
+        update: (data) => write("updateDoc", path, data || {}),
+        delete: () => write("deleteDoc", path),
+        onSnapshot: (cb, err) => listen(compute, cb, err),
       };
     }
     function query(path, orderField, orderDir) {
-      const get = async () => {
-        const r = await api("listCollection", { path, orderField: orderField || "", orderDir: orderDir || "asc" });
-        return qSnap(r.docs || []);
-      };
+      const compute = () => qSnap(localList(path, orderField, orderDir));
       return {
-        get,
+        get: async () => { await fresh(); return compute(); },
         orderBy: (field, dir) => query(path, field, dir || "asc"),
-        onSnapshot: (cb, err) => listen(get, cb, err),
+        onSnapshot: (cb, err) => listen(compute, cb, err),
       };
     }
     function collection(path) {
@@ -1020,13 +1108,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       q.doc = (id) => doc(path + "/" + (id || newId()));
       q.add = async (data) => {
         const id = newId();
-        await api("setDoc", { path: path + "/" + id, data: clone(data) || {} });
-        afterWrite();
+        await write("setDoc", path + "/" + id, data || {});
         return { id, path: path + "/" + id };
       };
       return q;
     }
-    return { doc, collection, ping: () => api("health"), refreshAll };
+    return { doc, collection, ping: () => sync(), refreshAll: poll };
   }
 
   function makeBrowserDownloads() {
