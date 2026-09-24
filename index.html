@@ -281,6 +281,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .debt-row + .debt-row { border-top: 1px solid var(--line); }
   .debt-row .name { font-weight: 600; }
   .debt-row .amount { font-family: "JetBrains Mono", monospace; font-weight: 600; color: var(--expense); }
+  .debt-row { gap: 10px; }
+  .debt-main { flex: 1; min-width: 0; }
+  .debt-sub { font-size: 12px; color: var(--ink-faint); margin-top: 2px; overflow-wrap: anywhere; }
+  .btn-ok { flex: 0 0 auto; min-width: 52px; min-height: 40px; border-radius: 10px; border: 1px solid var(--income); background: var(--surface); color: var(--income); font-weight: 700; font-size: 14px; cursor: pointer; }
+  .btn-ok:disabled { opacity: .5; }
+  .debt-total { display: flex; justify-content: space-between; padding: 10px 2px 2px; margin-top: 4px; border-top: 1px solid var(--line); font-weight: 600; font-size: 14px; }
+  .debt-total .amount { font-family: "JetBrains Mono", monospace; color: var(--expense); }
+  .li-acum { font-size: 11.5px; color: var(--ink-faint); text-align: right; margin-top: 2px; font-family: "JetBrains Mono", monospace; }
   .pago-row {
     display: flex; align-items: center; gap: 10px;
     background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 8px 8px 14px;
@@ -529,14 +537,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="subtotal-row" style="font-size:16px;"><span class="k">Balance</span><span class="v mono" id="resBalance">0,00 €</span></div>
     </div>
 
-    <div class="section-title">A quién se debe</div>
-    <div class="section-hint">Lo que se debe a cada persona por sus compras — de todas las noches, aunque la caja ya esté cerrada — menos lo que ya se le ha pagado.</div>
+    <div class="section-title">Pendientes de reembolso</div>
+    <div class="section-hint">Lo que se debe a cada persona por sus compras, sumando todas las noches (aunque estén cerradas) y restando lo ya pagado. Debajo del nombre: de qué noche viene. Cuando le devolváis el dinero, pulsa <b>OK</b>: queda apuntado aquí y en el Excel de Drive.</div>
     <div class="card" style="margin-bottom:10px;" id="reembolsosCard">
       <div id="reembolsosList"></div>
     </div>
-    <div class="section-hint" id="pagosLabel" style="margin-top:14px;font-weight:600;color:var(--ink);" hidden>Pagos registrados</div>
+    <div class="section-hint" id="pagosLabel" style="margin-top:14px;font-weight:600;color:var(--ink);" hidden>Reembolsos hechos <span style="font-weight:400;">(✕ para deshacer)</span></div>
     <div class="stack" id="pagosList" style="margin-bottom:10px;"></div>
-    <button class="btn btn-secondary" type="button" id="btnAddPago" style="margin-bottom:18px;">Registrar pago realizado</button>
+    <button class="btn btn-secondary" type="button" id="btnAddPago" style="margin-bottom:18px;">Registrar pago parcial</button>
 
     <div class="section-title">Cerrar la noche</div>
     <div class="section-hint">Cierra esta caja para guardar el histórico completo (todas las noches) en un único Excel y empezar una caja nueva y vacía.</div>
@@ -856,6 +864,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       BUILD_VERSION,
       "datos: " + (!db ? "sin conexión" : (db.status ? db.status() : "conectado")),
       "Drive: " + (mcp ? (driveReady ? "conectado" : "sin conectar") : "sin acceso"),
+      "Excel: " + driveSyncLabel(),
       "pagos cargados: " + pagos.length,
     ];
     el.textContent = parts.join(" · ");
@@ -874,7 +883,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v23-web";
+  const BUILD_VERSION = "v24-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1086,8 +1095,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       })().finally(() => { inflight = null; });
       return inflight;
     }
+    // Reads answer from the local copy; they refresh it first when it is
+    // older than 3 s. If Google fails right then, the last good copy is
+    // used instead of an error — a read must never raise a red banner that
+    // the (reported, threshold-based) polling would not.
     async function fresh() {
-      if (!cache || Date.now() - cacheAt > 3000) await sync();
+      if (!cache || Date.now() - cacheAt > 3000) {
+        try { await sync(); } catch (e) { if (!cache) throw e; }
+      }
     }
 
     function localGet(path) {
@@ -1123,7 +1138,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const sig = JSON.stringify(snap.docs ? snap.docs.map((d) => [d.id, d.data()]) : [snap.exists, snap.data()]);
       if (sig !== l.sig) { l.sig = sig; l.cb(snap); }
     }
-    function notifyAll() { listeners.forEach(runListener); }
+    // Whole-database change hook: fires once whenever the local copy of
+    // ANY document changed (another phone's edit picked up by a poll, or a
+    // write made here), so derived views — debts across every night, the
+    // per-night balances — are always recomputed from the same data.
+    const changeListeners = new Set();
+    const writeListeners = new Set();
+    let lastSig = null;
+    function emitChange() {
+      const sig = cache ? JSON.stringify([...cache]) : "";
+      if (sig === lastSig) return;
+      lastSig = sig;
+      changeListeners.forEach((f) => { try { f(); } catch (e) { console.error(e); } });
+    }
+    function emitLocalWrite() { writeListeners.forEach((f) => { try { f(); } catch (e) { console.error(e); } }); }
+    function notifyAll() { listeners.forEach(runListener); emitChange(); }
     async function poll() {
       if (document.visibilityState !== "visible") return;
       try {
@@ -1204,6 +1233,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         if (pendingWrites === 0) cacheAt = 0;
       }
       notifyAll();
+      emitLocalWrite();
     }
 
     // Several writes in ONE request, applied by the server under a single
@@ -1226,6 +1256,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         else if (o.op === "delete") cache.delete(o.path);
       }
       notifyAll();
+      emitLocalWrite();
     }
 
     function doc(path) {
@@ -1258,7 +1289,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       };
       return q;
     }
-    return { doc, collection, batch, ping: () => sync(), refreshAll: poll, status };
+    return {
+      doc, collection, batch, ping: () => sync(), refreshAll: poll, status,
+      onChange: (f) => { changeListeners.add(f); return () => changeListeners.delete(f); },
+      onLocalWrite: (f) => { writeListeners.add(f); return () => writeListeners.delete(f); },
+    };
   }
 
   function makeBrowserDownloads() {
@@ -1304,6 +1339,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         loadCachedDriveLink();
         loadHistoricalData();
         subscribeGlobalPagos();
+        // Everything derived from more than one night (who is owed what,
+        // per-night and running balances) is recomputed whenever ANY data
+        // changes — here or on another phone — so no view can go stale.
+        let changeTimer = null;
+        db.onChange(() => {
+          clearTimeout(changeTimer);
+          changeTimer = setTimeout(() => {
+            loadHistoricalData();
+            if (!$("tab-eventos").hidden) loadEventos();
+          }, 60);
+        });
+        // Every change made on this phone is pushed to the Drive Excel on
+        // its own, once edits pause — no button needed.
+        db.onLocalWrite(() => scheduleDriveSync(DRIVE_SYNC_DEBOUNCE_MS));
       } catch (e) {
         $("hdrNombre").textContent = "No se pudo cargar";
         $("hdrSub").textContent = "Recarga la página para reintentarlo.";
@@ -1510,13 +1559,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             db.collection(`eventos/${d.id}/gastos`).get(),
             db.collection(`eventos/${d.id}/ingresos`).get(),
           ]);
-          for (const g of gs.docs) allGastos.push(g.data());
+          const label = evLabel(d.data());
+          for (const g of gs.docs) allGastos.push({ ...g.data(), _key: `${d.id}/${g.id}`, _evento: label });
           for (const i of is.docs) allIngresos.push(i.data());
         } catch (e) { logError("Cargar histórico", e); /* skip an unreadable event rather than lose the rest */ }
       }
       historicalGastos = allGastos;
       historicalIngresos = allIngresos;
-      renderReembolsos();
+      renderGastos(); // gasto pills + "Pendientes de reembolso" depend on every night
       renderResumenGeneral();
     } catch (e) { logError("Cargar histórico", e); /* keep whatever we already had */ }
   }
@@ -1528,7 +1578,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!db || unsubPagos) return;
     unsubPagos = db.collection("pagos").orderBy("createdAt", "desc").onSnapshot((qs) => {
       pagos = qs.docs.map((d) => ({ id: d.id, ...d.data() }));
-      renderReembolsos();
+      renderGastos();
     }, (err) => toastErr("No se pudieron cargar los pagos", err));
   }
 
@@ -1631,6 +1681,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       renderReembolsos();
       return;
     }
+    const estadosGasto = reembolsosActuales().estadoGasto;
     list.innerHTML = gastos.map((g) => `
         <div class="list-item clickable" data-id="${esc(g.id)}" role="button" tabindex="0">
           <div class="thumb-placeholder">${receiptIconSVG}</div>
@@ -1639,7 +1690,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             <div class="li-sub">
               <span>${esc(fmtDate(g.fecha))}</span>
               ${g.comprador ? `<span>· Compró: ${esc(g.comprador)}</span>` : ""}
-              <span class="pill ${g.pagado ? "pill-paid" : "pill-pending"}">${g.pagado ? "Pagado" : "Pendiente"}</span>
+              ${(() => { const st = estadosGasto.get(`${currentEventId}/${g.id}`); const e2 = g.pagado ? "marcado" : (st ? st.estado : "pendiente");
+                return e2 === "marcado" ? '<span class="pill pill-paid">Pagado</span>'
+                  : e2 === "reembolsado" ? '<span class="pill pill-paid">Reembolsado</span>'
+                  : e2 === "parcial" ? `<span class="pill pill-pending">Parcial · falta ${eur(st.pendiente)}</span>`
+                  : '<span class="pill pill-pending">Pendiente</span>'; })()}
             </div>
           </div>
           <div class="li-amount" style="color:var(--expense)">− ${eur(g.importe)}</div>
@@ -1648,38 +1703,95 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     renderReembolsos();
   }
 
-  // Who is owed what, as a LIFETIME balance across every night — not just
-  // the one currently open. A debt from a closed event doesn't disappear
-  // just because the caja moved on; it stays until it's actually paid.
-  // A person's balance is what they're owed for their (unmarked-as-paid)
-  // gastos across all events, minus any lump-sum payments already
-  // registered against them — those payments don't need to line up with
-  // any single gasto (e.g. "le pagué 33€ a cuenta").
+  // ---------------------------------------------------------------------
+  // Reembolsos — ONE calculation used everywhere (app list, gasto pills,
+  // every Excel sheet), so the app and the Drive file can never disagree.
+  //
+  // Per person, across EVERY night: what they paid out of pocket (gastos
+  // they bought), minus gastos individually marked "Pagado", minus every
+  // payment registered to them (a manual "Registrar pago" or an "OK").
+  // Payments are applied to that person's unmarked gastos OLDEST FIRST, so
+  // each gasto gets an exact state — reembolsado / parcial / pendiente —
+  // and whatever is still pending is attributed to the night it came from.
+  // ---------------------------------------------------------------------
+  const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+  const personaKey = (s) => (s || "").trim() || "Sin especificar";
+  function evLabel(info) {
+    return ((info && info.nombre) || "").trim() || (info && info.fecha ? fmtDate(info.fecha) : "") || "(sin nombre)";
+  }
+  function currentGastosLabeled() {
+    const label = evLabel(eventInfo);
+    return gastos.map((g) => ({ ...g, _key: `${currentEventId}/${g.id}`, _evento: label }));
+  }
+  function calcReembolsos(gastosList, pagosList) {
+    const personas = new Map();
+    const estadoGasto = new Map(); // _key -> {estado, cubierto, pendiente}
+    const acc = (n) => {
+      if (!personas.has(n)) personas.set(n, { nombre: n, gastado: 0, pagadoItem: 0, pagadoLedger: 0, pendiente: 0, aFavor: 0, porEvento: new Map(), pend: [] });
+      return personas.get(n);
+    };
+    for (const g of gastosList) {
+      const a = acc(personaKey(g.comprador));
+      const imp = Number(g.importe) || 0;
+      a.gastado += imp;
+      if (g.pagado) { a.pagadoItem += imp; if (g._key) estadoGasto.set(g._key, { estado: "marcado", cubierto: imp, pendiente: 0 }); }
+      else a.pend.push(g);
+    }
+    for (const p of pagosList) acc(personaKey(p.persona)).pagadoLedger += Number(p.importe) || 0;
+    for (const a of personas.values()) {
+      let libre = a.pagadoLedger;
+      a.pend.sort((x, y) => (x.fecha || "").localeCompare(y.fecha || "") || (x.createdAt || "").localeCompare(y.createdAt || ""));
+      for (const g of a.pend) {
+        const imp = Number(g.importe) || 0;
+        const cubierto = Math.min(imp, Math.max(0, libre));
+        libre -= cubierto;
+        const pendiente = round2(imp - cubierto);
+        const estado = pendiente < 0.005 ? "reembolsado" : (cubierto > 0.005 ? "parcial" : "pendiente");
+        if (g._key) estadoGasto.set(g._key, { estado, cubierto: round2(cubierto), pendiente });
+        if (pendiente >= 0.005) {
+          const ev = g._evento || "(sin nombre)";
+          a.porEvento.set(ev, round2((a.porEvento.get(ev) || 0) + pendiente));
+        }
+      }
+      const diff = round2(a.gastado - a.pagadoItem - a.pagadoLedger);
+      a.gastado = round2(a.gastado); a.pagadoItem = round2(a.pagadoItem); a.pagadoLedger = round2(a.pagadoLedger);
+      a.pendiente = Math.max(0, diff);
+      a.aFavor = Math.max(0, -diff);
+      delete a.pend;
+    }
+    return { personas, estadoGasto };
+  }
+  function reembolsosActuales() {
+    return calcReembolsos([...historicalGastos, ...currentGastosLabeled()], pagos);
+  }
+  // Kept for the "Registrar pago" name suggestions: net amount per person.
   function debtsPorPersona() {
-    const porPersona = new Map();
-    for (const g of [...historicalGastos, ...gastos]) {
-      if (g.pagado) continue;
-      const nombre = (g.comprador || "").trim() || "Sin especificar";
-      porPersona.set(nombre, (porPersona.get(nombre) || 0) + (Number(g.importe) || 0));
-    }
-    for (const p of pagos) {
-      const nombre = (p.persona || "").trim() || "Sin especificar";
-      porPersona.set(nombre, (porPersona.get(nombre) || 0) - (Number(p.importe) || 0));
-    }
-    return porPersona;
+    const m = new Map();
+    for (const a of reembolsosActuales().personas.values()) m.set(a.nombre, a.pendiente - a.aFavor);
+    return m;
   }
 
   function renderReembolsos() {
     const el = $("reembolsosList");
-    const porPersona = debtsPorPersona();
-    const rows = [...porPersona.entries()].filter(([, v]) => Math.abs(v) > 0.005).sort((a, b) => b[1] - a[1]);
-    if (!rows.length) {
-      el.innerHTML = '<div class="section-hint" style="margin:0;">Todo reembolsado — no se debe nada por ahora.</div>';
+    const { personas } = reembolsosActuales();
+    const lista = [...personas.values()];
+    const pendientes = lista.filter((a) => a.pendiente >= 0.005).sort((a, b) => b.pendiente - a.pendiente);
+    const aFavor = lista.filter((a) => a.aFavor >= 0.005);
+    const totalPend = round2(pendientes.reduce((s, a) => s + a.pendiente, 0));
+    if (!pendientes.length && !aFavor.length) {
+      el.innerHTML = '<div class="section-hint" style="margin:0;">Todo reembolsado — no se debe nada a nadie.</div>';
     } else {
-      el.innerHTML = rows.map(([nombre, total]) => {
-        const seDebe = total > 0;
-        return `<div class="debt-row"><span class="name">${esc(nombre)}</span><span class="amount" style="color:${seDebe ? "var(--expense)" : "var(--income)"}">${seDebe ? eur(total) : "A favor " + eur(-total)}</span></div>`;
-      }).join("");
+      el.innerHTML = pendientes.map((a) => {
+        const detalle = [...a.porEvento.entries()].map(([ev, v]) => `${esc(ev)}: ${eur(v)}`).join(" · ");
+        return `<div class="debt-row" data-persona="${esc(a.nombre)}">
+          <div class="debt-main"><span class="name">${esc(a.nombre)}</span>${detalle ? `<div class="debt-sub">${detalle}</div>` : ""}</div>
+          <span class="amount">${eur(a.pendiente)}</span>
+          <button type="button" class="btn-ok" data-persona="${esc(a.nombre)}" data-importe="${a.pendiente.toFixed(2)}" aria-label="Marcar reembolsado a ${esc(a.nombre)} ${eur(a.pendiente)}">OK</button>
+        </div>`;
+      }).join("") + aFavor.map((a) => `<div class="debt-row">
+          <div class="debt-main"><span class="name">${esc(a.nombre)}</span><div class="debt-sub">Se le ha pagado de más</div></div>
+          <span class="amount" style="color:var(--income)">A favor ${eur(a.aFavor)}</span>
+        </div>`).join("") + (pendientes.length ? `<div class="debt-total"><span>Total pendiente</span><span class="amount" id="pendTotal">${eur(totalPend)}</span></div>` : "");
     }
 
     const pagosEl = $("pagosList");
@@ -1690,15 +1802,49 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       pagosEl.innerHTML = pagos.map((p) => `
         <div class="pago-row" data-id="${esc(p.id)}">
           <div class="pago-main">
-            <div class="pago-name">Pago a ${esc(p.persona || "—")}</div>
+            <div class="pago-name">${p.tipo === "ok" ? "✓ Reembolsado a" : "Pago a"} ${esc(p.persona || "—")}</div>
             <div class="pago-sub">${esc(fmtDate(p.fecha))}${p.nota ? " · " + esc(p.nota) : ""}</div>
           </div>
           <div class="pago-amount">− ${eur(p.importe)}</div>
-          <button type="button" class="pago-remove" data-id="${esc(p.id)}" aria-label="Eliminar pago">✕</button>
+          <button type="button" class="pago-remove" data-id="${esc(p.id)}" aria-label="Deshacer pago a ${esc(p.persona || "")}">✕</button>
         </div>`).join("");
     }
     renderDiag();
   }
+
+  // One tap on OK = "this person has been paid back everything pending".
+  // The payment id is derived from (person, amount, how many payments they
+  // already had), so if two phones press OK on the same screen at the same
+  // time they write the SAME document — never a double payment.
+  function slugify(s) {
+    return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
+  }
+  $("reembolsosList").addEventListener("click", async (e) => {
+    const btn = e.target.closest(".btn-ok");
+    if (!btn || !db) return;
+    const persona = btn.dataset.persona;
+    const importe = round2(parseFloat(btn.dataset.importe));
+    if (!(importe > 0)) return;
+    const previos = pagos.filter((p) => personaKey(p.persona) === persona).length;
+    const id = `ok-${slugify(persona)}-${Math.round(importe * 100)}-${previos}`;
+    btn.disabled = true;
+    btn.textContent = "…";
+    try {
+      await db.collection("pagos").doc(id).set({
+        persona, importe, fecha: todayISO(),
+        nota: "Reembolso completo (OK)",
+        tipo: "ok",
+        evento: evLabel(eventInfo),
+        createdAt: new Date().toISOString(),
+      });
+      toast(`Reembolsado a ${persona}: ${eur(importe)}. Guardando en Drive…`);
+      scheduleDriveSync(0);
+    } catch (err) {
+      toastErr("No se pudo marcar el reembolso", err);
+      btn.disabled = false;
+      btn.textContent = "OK";
+    }
+  });
 
   function renderIngresos() {
     const list = $("ingresosList");
@@ -2044,7 +2190,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     btn.disabled = true;
     try {
       await db.doc(`pagos/${id}`).delete();
-      toast("Pago eliminado.");
+      toast("Pago deshecho. Guardando en Drive…");
+      scheduleDriveSync(0);
     } catch (err) {
       toastErr("No se pudo eliminar el pago", err);
       btn.disabled = false;
@@ -2127,14 +2274,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         db.collection(`eventos/${d.id}/gastos`).get(),
         db.collection(`eventos/${d.id}/ingresos`).get(),
       ]);
+      const label = evLabel(info);
       events.push({
         id: d.id,
         nombre: info.nombre || "",
         fecha: info.fecha || "",
         local: info.local || "",
+        createdAt: info.createdAt || "",
         closedAt: info.closedAt || null,
         stockFinal: normalizeStockFinal(info),
-        gastos: gSnap.docs.map((x) => x.data()),
+        gastos: gSnap.docs.map((x) => ({ ...x.data(), _key: `${d.id}/${x.id}`, _evento: label })),
         ingresos: iSnap.docs.map((x) => x.data()),
       });
     }
@@ -2145,7 +2294,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // a lump-sum reimbursement outlives the night it was logged on.
   async function fetchAllPagos() {
     const qs = await db.collection("pagos").orderBy("createdAt", "asc").get();
-    return qs.docs.map((x) => x.data());
+    return qs.docs.map((x) => ({ id: x.id, ...x.data() }));
   }
 
   // ---------------------------------------------------------------------
@@ -2162,14 +2311,28 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!eventosLoaded) list.innerHTML = '<div class="empty">Cargando eventos…</div>';
     try {
       const events = await fetchAllEvents();
-      // fetchAllEvents orders oldest-first; show the most recent night first.
-      eventosCache = events.slice().reverse();
+      // Most recent night first (by date, then creation).
+      eventosCache = balancesEncadenados(events).ord.reverse();
       eventosLoaded = true;
       renderEventos();
     } catch (err) {
       toastErr("No se pudieron cargar los eventos", err);
       if (!eventosLoaded) list.innerHTML = '<div class="empty">No se pudieron cargar los eventos.</div>';
     }
+  }
+
+  // Nights in the order they happened (date, then creation), each with its
+  // own balance and the running balance up to and including it.
+  function balancesEncadenados(events) {
+    const ord = [...events].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || "") || (a.createdAt || "").localeCompare(b.createdAt || ""));
+    let acum = 0;
+    const byId = new Map();
+    for (const ev of ord) {
+      const tot = eventoTotales(ev);
+      acum = round2(acum + tot.balance);
+      byId.set(ev.id, { ...tot, acumulado: acum });
+    }
+    return { ord, byId };
   }
 
   function eventoTotales(ev) {
@@ -2186,8 +2349,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       list.innerHTML = '<div class="empty">Todavía no hay ningún evento guardado.</div>';
       return;
     }
+    const cadena = balancesEncadenados(eventosCache).byId;
     list.innerHTML = eventosCache.map((ev, idx) => {
-      const tot = eventoTotales(ev);
+      const tot = cadena.get(ev.id);
       const estado = ev.closedAt ? "Cerrada" : (ev.id === currentEventId ? "En curso" : "Abierta");
       return `
         <div class="list-item clickable" data-idx="${idx}" role="button" tabindex="0">
@@ -2201,7 +2365,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
               <span>· ${ev.gastos.length} gasto${ev.gastos.length === 1 ? "" : "s"}, ${ev.ingresos.length} ingreso${ev.ingresos.length === 1 ? "" : "s"}</span>
             </div>
           </div>
-          <div class="li-amount" style="color:${tot.balance >= 0 ? "var(--income)" : "var(--expense)"}">${tot.balance >= 0 ? "+" : ""}${eur(tot.balance)}</div>
+          <div><div class="li-amount" style="color:${tot.balance >= 0 ? "var(--income)" : "var(--expense)"}">${tot.balance >= 0 ? "+" : ""}${eur(tot.balance)}</div>
+          <div class="li-acum" title="Balance acumulado hasta esta noche">acum. ${eur(tot.acumulado)}</div></div>
           ${chevronSVG}
         </div>`;
     }).join("");
@@ -2444,73 +2609,57 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     pagosGlobal = pagosGlobal || [];
     const wb = XLSX.utils.book_new();
 
-    // --- Shared per-person debt tally, computed up front so the Resumen
-    // sheet can show "a quién hay que reembolsar" without waiting for the
-    // Compras y Gastos / Pagos registrados sheets to be built first.
-    // comprador -> { gastado: total spent, pagadoItem: gastos individually
-    // flagged Pagado, pagadoLedger: lump-sum "Registrar pago" payments }
-    const deudaPorPersona = new Map();
-    function accFor(persona) {
-      if (!deudaPorPersona.has(persona)) deudaPorPersona.set(persona, { gastado: 0, pagadoItem: 0, pagadoLedger: 0 });
-      return deudaPorPersona.get(persona);
-    }
+    // --- Reembolsos: the SAME calculation the app shows (calcReembolsos),
+    // so the Drive file and the app can never disagree.
+    const allGastos = [];
+    for (const ev of events) for (const g of ev.gastos) allGastos.push(g);
+    const { personas, estadoGasto } = calcReembolsos(allGastos, pagosGlobal);
+    const cadena = balancesEncadenados(events);
 
-    // --- Compras y Gastos: every night combined ---
-    const gastosRows = [["Fecha", "Evento", "Proveedor", "Compró", "Importe (€)", "Pagado", "Observaciones"]];
-    let totalGastosAll = 0;
-    for (const ev of events) {
-      const ordenados = [...ev.gastos].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+    // --- Compras y Gastos: every night combined, each with its exact
+    // reimbursement state (payments applied oldest-first per person).
+    const gastosRows = [["Fecha", "Evento", "Proveedor", "Compró", "Importe (€)", "Reembolsado", "Pendiente (€)", "Observaciones"]];
+    let totalGastosAll = 0, totalPendGastos = 0;
+    for (const ev of cadena.ord) {
+      const ordenados = [...ev.gastos].sort((x, y) => (x.fecha || "").localeCompare(y.fecha || ""));
       for (const g of ordenados) {
         const importe = Number(g.importe) || 0;
         totalGastosAll += importe;
-        gastosRows.push([fmtDate(g.fecha), ev.nombre || ev.fecha, g.proveedor || "", g.comprador || "", importe, g.pagado ? "Sí" : "No", g.observaciones || ""]);
-
-        const persona = (g.comprador || "").trim() || "Sin especificar";
-        const acc = accFor(persona);
-        acc.gastado += importe;
-        if (g.pagado) acc.pagadoItem += importe;
+        const st = estadoGasto.get(g._key) || { estado: g.pagado ? "marcado" : "pendiente", cubierto: 0, pendiente: g.pagado ? 0 : importe };
+        const txt = st.estado === "marcado" ? "Sí (marcado en el gasto)"
+          : st.estado === "reembolsado" ? "Sí"
+          : st.estado === "parcial" ? `Parcial (${eur(st.cubierto)} pagados)`
+          : "No";
+        totalPendGastos += st.pendiente;
+        gastosRows.push([fmtDate(g.fecha), ev.nombre || ev.fecha, g.proveedor || "", g.comprador || "", importe, txt, round2(st.pendiente), g.observaciones || ""]);
       }
     }
-    gastosRows.push(["", "", "", "TOTAL", totalGastosAll, "", ""]);
+    gastosRows.push(["", "", "", "TOTAL", round2(totalGastosAll), "", round2(totalPendGastos), ""]);
 
-    // --- Pagos registrados: lump-sum reimbursements logged with
-    // "Registrar pago", across every night — including payments made
-    // after the night that created the debt was already closed. These
-    // aren't tied to a single gasto (e.g. paying someone back partially,
-    // or all at once, from the night's takings), so they're tracked and
-    // totalled separately here.
-    const pagosRows = [["Fecha", "Evento", "Persona", "Importe (€)", "Nota"]];
+    // --- Pagos registrados: every reimbursement, OK or manual.
+    const pagosRows = [["Fecha", "Evento", "Persona", "Importe (€)", "Tipo", "Nota"]];
     let totalPagosAll = 0;
-    const ordenadosP = [...pagosGlobal].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+    const ordenadosP = [...pagosGlobal].sort((x, y) => (x.fecha || "").localeCompare(y.fecha || "") || (x.createdAt || "").localeCompare(y.createdAt || ""));
     for (const p of ordenadosP) {
       const importe = Number(p.importe) || 0;
       totalPagosAll += importe;
-      pagosRows.push([fmtDate(p.fecha), p.evento || "", p.persona || "", importe, p.nota || ""]);
-      accFor((p.persona || "").trim() || "Sin especificar").pagadoLedger += importe;
+      pagosRows.push([fmtDate(p.fecha), p.evento || "", p.persona || "", importe, p.tipo === "ok" ? "OK — reembolso completo" : "Pago registrado", p.nota || ""]);
     }
-    pagosRows.push(["", "", "TOTAL", totalPagosAll, ""]);
+    pagosRows.push(["", "", "TOTAL", round2(totalPagosAll), "", ""]);
 
-    // --- Reembolsos: who is owed what, across every night. "Ya pagado"
-    // combines gastos individually marked Pagado and lump-sum pagos;
-    // "Pendiente de pagar" is what's left to give them; "A favor" is the
-    // (rarer) case where they've already been paid more than they spent.
-    const reembolsosRows = [["Persona", "Total gastado (€)", "Ya pagado (€)", "Pendiente de pagar (€)", "A favor (€)"]];
+    // --- Reembolsos: one row per person.
+    const reembolsosRows = [["Persona", "Total gastado (€)", "Ya pagado (€)", "Pendiente de pagar (€)", "A favor (€)", "Estado", "Pendiente por evento"]];
     let sumGastado = 0, sumPagadoTotal = 0, sumPendiente = 0, sumAFavor = 0;
-    const personasOrdenadas = [...deudaPorPersona.entries()].map(([persona, acc]) => {
-      const pagadoTotal = acc.pagadoItem + acc.pagadoLedger;
-      const diff = acc.gastado - pagadoTotal;
-      return [persona, acc.gastado, pagadoTotal, Math.max(0, diff), Math.max(0, -diff)];
-    }).sort((a, b) => b[3] - a[3]);
-    for (const row of personasOrdenadas) {
-      sumGastado += row[1]; sumPagadoTotal += row[2]; sumPendiente += row[3]; sumAFavor += row[4];
-      reembolsosRows.push(row);
+    const personasOrdenadas = [...personas.values()].sort((x, y) => y.pendiente - x.pendiente || x.nombre.localeCompare(y.nombre));
+    for (const a of personasOrdenadas) {
+      const pagado = round2(a.pagadoItem + a.pagadoLedger);
+      const estado = a.pendiente >= 0.005 ? "Pendiente" : (a.aFavor >= 0.005 ? "A favor" : "Reembolsado ✓");
+      const detalle = [...a.porEvento.entries()].map(([ev, v]) => `${ev}: ${eur(v)}`).join(" · ");
+      sumGastado += a.gastado; sumPagadoTotal += pagado; sumPendiente += a.pendiente; sumAFavor += a.aFavor;
+      reembolsosRows.push([a.nombre, a.gastado, pagado, a.pendiente, a.aFavor, estado, detalle]);
     }
-    reembolsosRows.push(["TOTAL", sumGastado, sumPagadoTotal, sumPendiente, sumAFavor]);
-
-    // Only people still owed money show up in "a quién hay que
-    // reembolsar" — someone fully paid back, or with nothing pending,
-    // doesn't belong in a "who do we still owe" list.
-    const personasPendientes = personasOrdenadas.filter((row) => row[3] > 0.004);
+    reembolsosRows.push(["TOTAL", round2(sumGastado), round2(sumPagadoTotal), round2(sumPendiente), round2(sumAFavor), "", ""]);
+    const personasPendientes = personasOrdenadas.filter((a) => a.pendiente >= 0.005);
 
     // --- Resumen: one row per night, plus (new) an overall Ganancias
     // summary and a "A quién hay que reembolsar" block, so the whole
@@ -2527,11 +2676,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         if (nombre && !stockTypes.includes(nombre)) { stockTypes.push(nombre); stockUnits[nombre] = item.unidad || guessUnidad(nombre); }
       }
     }
-    const resumenHeader = ["Fecha", "Evento", "Local", "Estado", "Total gastos (€)", "Bizum (€)", "Tarjeta (€)", "Efectivo (€)", "Total ingresos (€)", "Ganancias (€)"]
+    const resumenHeader = ["Fecha", "Evento", "Local", "Estado", "Total gastos (€)", "Bizum (€)", "Tarjeta (€)", "Efectivo (€)", "Total ingresos (€)", "Ganancias (€)", "Balance acumulado (€)"]
       .concat(stockTypes.map((t) => `${t} restantes (${stockUnits[t] === "L" ? "L" : "uds"})`));
     const resumenRows = [resumenHeader];
     let sumG = 0, sumB = 0, sumT = 0, sumE = 0;
-    for (const ev of events) {
+    for (const ev of cadena.ord) {
       const g = ev.gastos.reduce((s, x) => s + (Number(x.importe) || 0), 0);
       const b = ev.ingresos.reduce((s, x) => s + (Number(x.bizum) || 0), 0);
       const t = ev.ingresos.reduce((s, x) => s + (Number(x.tarjeta) || 0), 0);
@@ -2543,50 +2692,50 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       });
       resumenRows.push([
         fmtDate(ev.fecha), ev.nombre || "(sin nombre)", ev.local || "", ev.closedAt ? "Cerrada" : "Abierta",
-        g, b, t, c, b + t + c, (b + t + c) - g,
+        round2(g), round2(b), round2(t), round2(c), round2(b + t + c), round2((b + t + c) - g), cadena.byId.get(ev.id).acumulado,
       ].concat(stockValues));
     }
     const totalIngresosAllNights = sumB + sumT + sumE;
     const gananciasTotales = totalIngresosAllNights - sumG;
-    resumenRows.push(["", "", "", "TOTAL", sumG, sumB, sumT, sumE, totalIngresosAllNights, gananciasTotales].concat(stockTypes.map(() => "")));
+    resumenRows.push(["", "", "", "TOTAL", round2(sumG), round2(sumB), round2(sumT), round2(sumE), round2(totalIngresosAllNights), round2(gananciasTotales), round2(gananciasTotales)].concat(stockTypes.map(() => "")));
 
     // --- Ganancias: overall profit summary across every night.
     resumenRows.push([]);
     resumenRows.push(["GANANCIAS (todos los eventos)"]);
-    resumenRows.push(["Total ingresos (€)", totalIngresosAllNights]);
-    resumenRows.push(["Total gastos (€)", sumG]);
-    resumenRows.push(["Ganancias (€)", gananciasTotales]);
+    resumenRows.push(["Total ingresos (€)", round2(totalIngresosAllNights)]);
+    resumenRows.push(["Total gastos (€)", round2(sumG)]);
+    resumenRows.push(["Ganancias (€)", round2(gananciasTotales)]);
 
     // --- A quién hay que reembolsar: pulled from the same per-person
     // tally as the Reembolsos sheet, so both agree, and shown right here
     // so it's visible at a glance without switching sheets.
     resumenRows.push([]);
-    resumenRows.push(["A QUIÉN HAY QUE REEMBOLSAR"]);
+    resumenRows.push(["PENDIENTES DE REEMBOLSO"]);
     if (personasPendientes.length) {
-      resumenRows.push(["Persona", "Pendiente de pagar (€)"]);
-      for (const row of personasPendientes) {
-        resumenRows.push([row[0], row[3]]);
+      resumenRows.push(["Persona", "Pendiente de pagar (€)", "De qué noche"]);
+      for (const a of personasPendientes) {
+        resumenRows.push([a.nombre, a.pendiente, [...a.porEvento.entries()].map(([ev, v]) => `${ev}: ${eur(v)}`).join(" · ")]);
       }
-      resumenRows.push(["TOTAL a reembolsar", personasPendientes.reduce((s, r) => s + r[3], 0)]);
+      resumenRows.push(["TOTAL a reembolsar", round2(personasPendientes.reduce((s, a) => s + a.pendiente, 0))]);
     } else {
       resumenRows.push(["Nadie tiene un reembolso pendiente ahora mismo."]);
     }
 
     const wsResumen = XLSX.utils.aoa_to_sheet(resumenRows);
-    wsResumen["!cols"] = [{ wch: 22 }, { wch: 26 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 }]
+    wsResumen["!cols"] = [{ wch: 22 }, { wch: 26 }, { wch: 30 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 18 }]
       .concat(stockTypes.map(() => ({ wch: 18 })));
     XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen");
 
     const wsGastos = XLSX.utils.aoa_to_sheet(gastosRows);
-    wsGastos["!cols"] = [{ wch: 12 }, { wch: 22 }, { wch: 18 }, { wch: 16 }, { wch: 12 }, { wch: 10 }, { wch: 30 }];
+    wsGastos["!cols"] = [{ wch: 12 }, { wch: 22 }, { wch: 18 }, { wch: 16 }, { wch: 12 }, { wch: 24 }, { wch: 13 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, wsGastos, "Compras y Gastos");
 
     const wsPagos = XLSX.utils.aoa_to_sheet(pagosRows);
-    wsPagos["!cols"] = [{ wch: 12 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 32 }];
+    wsPagos["!cols"] = [{ wch: 12 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 24 }, { wch: 32 }];
     XLSX.utils.book_append_sheet(wb, wsPagos, "Pagos registrados");
 
     const wsReembolsos = XLSX.utils.aoa_to_sheet(reembolsosRows);
-    wsReembolsos["!cols"] = [{ wch: 22 }, { wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 14 }];
+    wsReembolsos["!cols"] = [{ wch: 22 }, { wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 16 }, { wch: 40 }];
     XLSX.utils.book_append_sheet(wb, wsReembolsos, "Reembolsos");
 
     // --- Ingresos: every night combined ---
@@ -2661,6 +2810,50 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // full history to the same Drive file without touching the night in
   // progress. "Abrir Google Drive" lets Vincent verify it landed.
   // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // Automatic Drive sync. Every change made on this phone (a gasto, an
+  // OK, an inventory count…) schedules one rewrite of the Drive Excel once
+  // edits pause; an OK or an undo rewrites it right away. Only the phone
+  // that made the change writes, and never two rewrites at once — a change
+  // during a rewrite queues exactly one more.
+  // ---------------------------------------------------------------------
+  const DRIVE_SYNC_DEBOUNCE_MS = 45000;
+  let driveSyncTimer = null, driveSyncRunning = false, driveSyncAgain = false;
+  let driveSync = { state: "idle", at: 0, err: "" };
+  function driveSyncLabel() {
+    const t = driveSync.at ? new Date(driveSync.at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "";
+    if (driveSync.state === "saving") return "guardando…";
+    if (driveSync.state === "pending") return "cambios pendientes";
+    if (driveSync.state === "ok") return "al día " + t;
+    if (driveSync.state === "error") return "error, reintentando";
+    return "—";
+  }
+  function scheduleDriveSync(delay) {
+    if (!mcp || !db) return;
+    clearTimeout(driveSyncTimer);
+    if (driveSync.state !== "saving") { driveSync.state = "pending"; renderDiag(); }
+    driveSyncTimer = setTimeout(runDriveSync, Math.max(0, delay || 0));
+  }
+  async function runDriveSync() {
+    if (driveSyncRunning) { driveSyncAgain = true; return; }
+    driveSyncRunning = true;
+    driveSync.state = "saving"; renderDiag();
+    try {
+      if (typeof XLSX === "undefined" && !(await waitForXLSX())) throw new Error("No se pudo cargar el motor de Excel");
+      const [events, pagosGlobal] = await Promise.all([fetchAllEvents(), fetchAllPagos()]);
+      await saveWorkbookToDrive(buildHistoryWorkbook(events, pagosGlobal));
+      driveSync = { state: "ok", at: Date.now(), err: "" };
+    } catch (err) {
+      driveSync = { state: "error", at: driveSync.at, err: describeErr(err) };
+      logError("Guardar el Excel en Drive (automático)", err);
+      setTimeout(() => scheduleDriveSync(0), 120000);
+    } finally {
+      driveSyncRunning = false;
+      renderDiag();
+      if (driveSyncAgain) { driveSyncAgain = false; scheduleDriveSync(0); }
+    }
+  }
+
   $("btnCopyDrive").addEventListener("click", async () => {
     if (!db) { toast("No se puede leer sin conexión de datos."); return; }
     if (!mcp) { toast("Esta vista no tiene acceso a Google Drive."); return; }
@@ -2678,6 +2871,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const [events, pagosGlobal] = await Promise.all([fetchAllEvents(), fetchAllPagos()]);
       const buf = buildHistoryWorkbook(events, pagosGlobal);
       await saveWorkbookToDrive(buf);
+      driveSync = { state: "ok", at: Date.now(), err: "" };
+      renderDiag();
       driveReady = true;
       updateCloseButtonLabel();
       await refreshDriveLink();
