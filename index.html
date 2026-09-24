@@ -301,6 +301,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .stock-row .stock-name { flex: 1; font-weight: 600; font-size: 14.5px; }
   .stock-prev { font-weight: 400; font-size: 12px; color: var(--ink-faint); margin-top: 1px; }
   .stock-row input[type="number"] { width: 76px; text-align: right; padding: 8px 10px; }
+  .stock-row .stock-unit { width: 26px; font-size: 12.5px; color: var(--ink-faint); }
   .stock-row .stock-remove {
     background: none; border: none; color: var(--ink-faint); font-size: 20px; line-height: 1;
     cursor: pointer; padding: 6px 8px; border-radius: 8px;
@@ -454,6 +455,25 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   </section>
 
   <!-- ===================== TAB: EVENTOS ===================== -->
+  <section class="tab" id="tab-inventario" hidden>
+    <div class="section-title">Inventario</div>
+    <div class="section-hint">Cuenta lo que queda al acabar la noche. Vino y vermut en litros (admite decimales: 1,5). Deja en blanco lo que no hayas contado.</div>
+    <div class="section-hint" id="stockPrevHint" style="margin-top:-8px;"></div>
+    <div class="stack" id="stockList" style="margin-bottom:12px;"></div>
+    <form id="formStockNuevo" class="add-stock-form">
+      <div class="field">
+        <label for="stockNuevoNombre">Añadir producto</label>
+        <input id="stockNuevoNombre" type="text" placeholder="Ej. Fanta">
+      </div>
+      <div class="field" style="flex:0 0 96px;">
+        <label for="stockNuevoUnidad">Unidad</label>
+        <select id="stockNuevoUnidad"><option value="uds">uds</option><option value="L">litros</option></select>
+      </div>
+      <button class="btn btn-secondary" type="submit">Añadir</button>
+    </form>
+    <div class="section-hint">Para quitar un producto de la lista pulsa ✕. Para cambiarle el nombre, quítalo y añádelo con el nombre nuevo. La lista se copia a la noche siguiente.</div>
+  </section>
+
   <section class="tab" id="tab-eventos" hidden>
     <div class="section-title">Eventos</div>
     <div class="section-hint">Todas las noches, por fecha — qué se compró, qué entró, y cuándo. Toca una para ver el detalle.</div>
@@ -518,18 +538,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="stack" id="pagosList" style="margin-bottom:10px;"></div>
     <button class="btn btn-secondary" type="button" id="btnAddPago" style="margin-bottom:18px;">Registrar pago realizado</button>
 
-    <div class="section-title">Inventario final</div>
-    <div class="section-hint">Cuenta las latas que quedan al acabar la noche, por tipo. El vino no hace falta contarlo, no se puede medir bien.</div>
-    <div class="section-hint" id="stockPrevHint" style="margin-top:-8px;"></div>
-    <div class="stack" id="stockList" style="margin-bottom:12px;"></div>
-    <form id="formStockNuevo" class="add-stock-form">
-      <div class="field">
-        <label for="stockNuevoNombre">Añadir otro tipo</label>
-        <input id="stockNuevoNombre" type="text" placeholder="Ej. Fanta">
-      </div>
-      <button class="btn btn-secondary" type="submit">Añadir</button>
-    </form>
-
     <div class="section-title">Cerrar la noche</div>
     <div class="section-hint">Cierra esta caja para guardar el histórico completo (todas las noches) en un único Excel y empezar una caja nueva y vacía.</div>
     <div class="stack" style="margin-bottom:22px;">
@@ -572,6 +580,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   <button data-tab="ingresos">
     <svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="5.2"/><circle cx="16" cy="12" r="5.2"/></svg>
     Ingresos
+  </button>
+  <button data-tab="inventario">
+    <svg viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg>
+    Inventario
   </button>
   <button data-tab="eventos">
     <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>
@@ -722,8 +734,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="section-title" style="font-size:15px;">Ingresos</div>
     <div class="stack" id="eventoDetalleIngresosList" style="margin-bottom:16px;"></div>
 
-    <div class="section-title" style="font-size:15px;" id="eventoDetalleStockTitle" hidden>Inventario final</div>
-    <div class="section-hint" style="margin-top:-8px;">Puedes corregir el conteo de latas de esta noche si os equivocasteis al cerrar.</div>
+    <div class="section-title" style="font-size:15px;" id="eventoDetalleStockTitle" hidden>Inventario</div>
+    <div class="section-hint" style="margin-top:-8px;">Puedes corregir el inventario de esta noche si os equivocasteis al cerrar.</div>
     <div class="stack" id="eventoDetalleStockList" style="margin-bottom:12px;"></div>
     <form id="formEventoDetalleStockNuevo" class="add-stock-form" style="margin-bottom:16px;">
       <div class="field">
@@ -811,6 +823,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (appErrors.length > 5) appErrors.length = 5;
     renderErrBanner();
   }
+  // Background-load failures ("No se pudieron cargar …") describe a moment
+  // that is over as soon as a sync succeeds again: drop them then, so the
+  // banner only ever shows problems that are still happening.
+  function clearLoadErrors() {
+    const before = appErrors.length;
+    for (let i = appErrors.length - 1; i >= 0; i--) {
+      if (/^No se pud(?:o|ieron) cargar/.test(appErrors[i].msg)) appErrors.splice(i, 1);
+    }
+    if (appErrors.length !== before) renderErrBanner();
+  }
   function toastErr(context, err) {
     toast(context + (describeErr(err) ? " — ver aviso arriba" : ""));
     logError(context, err);
@@ -832,7 +854,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!el) return;
     const parts = [
       BUILD_VERSION,
-      "datos: " + (db ? "conectado" : "sin conexión"),
+      "datos: " + (!db ? "sin conexión" : (db.status ? db.status() : "conectado")),
       "Drive: " + (mcp ? (driveReady ? "conectado" : "sin conectar") : "sin acceso"),
       "pagos cargados: " + pagos.length,
     ];
@@ -852,7 +874,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v21-web";
+  const BUILD_VERSION = "v22-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -864,15 +886,50 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // drink type (Fanta, etc.) can be added. This reads either shape and
   // always returns the list form, defaulting to Cerveza + Coca-Cola so
   // existing habits keep working.
+  // Inventario v2 (v22): the bar's standard product list, each with its
+  // unit — "uds" counted in units, "L" measured in litres (decimals).
+  const DEFAULT_STOCK = [
+    ["Cerveza Galicia", "uds"], ["Cerveza Estrella", "uds"], ["Cerveza sin alcohol", "uds"],
+    ["Vino blanco", "L"], ["Vermut", "L"],
+    ["Olivas", "uds"], ["Patatas", "uds"], ["Palomitas", "uds"],
+    ["Coca-Cola", "uds"], ["Coca-Cola Zero", "uds"],
+  ].map(([nombre, unidad]) => ({ nombre, unidad, cantidad: null }));
+  function guessUnidad(nombre) { return /vino|vermut|litro/i.test(nombre || "") ? "L" : "uds"; }
+  function stockKey(nombre) { return (nombre || "").trim().toLowerCase(); }
+  function fmtCantidad(c, unidad) {
+    if (c == null || c === "") return "";
+    const n = Number(c);
+    return (unidad === "L" ? n.toLocaleString("es-ES", { maximumFractionDigits: 2 }) + " L" : String(n));
+  }
+  function parseCantidad(v, unidad) {
+    v = String(v == null ? "" : v).trim().replace(",", ".");
+    if (v === "") return null;
+    const n = Math.max(0, parseFloat(v) || 0);
+    return unidad === "L" ? Math.round(n * 100) / 100 : Math.round(n);
+  }
+  // One-time upgrade of an OPEN night that still has the old generic list
+  // (Cerveza + Coca-Cola): keep anything already counted, drop generic
+  // types nobody counted, add the standard products that are missing.
+  function upgradeStockList(list) {
+    const kept = list.filter((x) => x.cantidad != null || !["cerveza"].includes(stockKey(x.nombre)));
+    const byKey = new Map(kept.map((x) => [stockKey(x.nombre), x]));
+    const std = DEFAULT_STOCK.map((x) => ({ ...x, ...(byKey.get(stockKey(x.nombre)) || {}), unidad: x.unidad }));
+    const stdKeys = new Set(DEFAULT_STOCK.map((x) => stockKey(x.nombre)));
+    return std.concat(kept.filter((x) => !stdKeys.has(stockKey(x.nombre))));
+  }
   function normalizeStockFinal(d) {
     if (Array.isArray(d.stockFinal)) {
-      return d.stockFinal.map((x) => ({ nombre: (x && x.nombre) || "", cantidad: x && x.cantidad != null ? x.cantidad : null }));
+      return d.stockFinal.map((x) => ({
+        nombre: (x && x.nombre) || "",
+        cantidad: x && x.cantidad != null ? x.cantidad : null,
+        unidad: (x && x.unidad) || guessUnidad(x && x.nombre),
+      }));
     }
     const legacy = [];
-    if (d.stockCerveza != null) legacy.push({ nombre: "Cerveza", cantidad: d.stockCerveza });
-    if (d.stockCocaCola != null) legacy.push({ nombre: "Coca-Cola", cantidad: d.stockCocaCola });
+    if (d.stockCerveza != null) legacy.push({ nombre: "Cerveza", cantidad: d.stockCerveza, unidad: "uds" });
+    if (d.stockCocaCola != null) legacy.push({ nombre: "Coca-Cola", cantidad: d.stockCocaCola, unidad: "uds" });
     if (legacy.length) return legacy;
-    return [{ nombre: "Cerveza", cantidad: null }, { nombre: "Coca-Cola", cantidad: null }];
+    return DEFAULT_STOCK.map((x) => ({ ...x }));
   }
   // What the PREVIOUS event's closing inventory count was, kept purely for
   // reference while counting tonight's — stock isn't tracked as a running
@@ -924,9 +981,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // connection safe: a retried write can never create a duplicate row.
   async function api(action, params) {
     let lastErr = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    // Google's front end fails a few % of requests outright (HTTP 503/404,
+    // an HTML error page, a POST turned into an empty GET, or a redirect
+    // that never answers). Every one of those is transient, so try up to 5
+    // times with growing pauses (1, 2, 4, 6 s) and a 20 s cap per attempt.
+    const BACKOFF = [1000, 2000, 4000, 6000];
+    for (let attempt = 0; attempt < 5; attempt++) {
       const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-      const timer = ctrl ? setTimeout(() => ctrl.abort(), 30000) : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 20000) : null;
       try {
         let res;
         try {
@@ -958,8 +1020,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         return j;
       } catch (e) {
         lastErr = e;
-        if (!e.retry) throw e;
-        await sleep(800 * (attempt + 1));
+        if (!e.retry || attempt === 4) throw e;
+        await sleep(BACKOFF[attempt]);
       } finally {
         if (timer) clearTimeout(timer);
       }
@@ -981,7 +1043,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     let pendingWrites = 0;
     const listeners = new Set();
     let pollTimer = null;
-    let syncFailed = false;
+    // Background polls tolerate a bad patch: the page keeps showing the
+    // last good data, the grey status line says "reintentando", and the red
+    // banner only appears after FAIL_REPORT_AFTER polls in a row failed
+    // (each poll already retries 5 times, so that is minutes of outage).
+    const FAIL_REPORT_AFTER = 3;
+    let consecutiveFails = 0;
+    let reported = false;
+    let lastOkAt = 0;
+    function status() {
+      if (!lastOkAt) return consecutiveFails ? "reintentando…" : "conectando…";
+      if (consecutiveFails === 0) return "conectado";
+      const t = new Date(lastOkAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+      return (reported ? "sin conexión" : "reintentando") + " (últimos datos " + t + ")";
+    }
 
     const docSnap = (id, exists, data) => ({ id, exists: !!exists, data: () => (exists ? clone(data) : undefined) });
     const qSnap = (docs) => {
@@ -1002,6 +1077,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           for (const d of r.docs || []) m.set(String(d.path), d.data || {});
           cache = m;
           cacheAt = Date.now();
+          lastOkAt = cacheAt;
+          consecutiveFails = 0;
+          if (reported) { reported = false; clearLoadErrors(); }
+          renderDiag();
           return;
         }
       })().finally(() => { inflight = null; });
@@ -1049,12 +1128,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if (document.visibilityState !== "visible") return;
       try {
         await sync();
-        syncFailed = false;
         notifyAll();
       } catch (e) {
-        // Report a lost connection once, not on every poll.
-        if (!syncFailed) listeners.forEach((l) => { if (l.err) { l.err(e); } });
-        syncFailed = true;
+        consecutiveFails++;
+        renderDiag();
+        // Report a lasting outage once, not a single bad request.
+        if (consecutiveFails >= FAIL_REPORT_AFTER && !reported) {
+          reported = true;
+          listeners.forEach((l) => { if (l.err) { l.err(e); } });
+          renderDiag();
+        }
       }
     }
     function ensurePolling() {
@@ -1068,7 +1151,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       listeners.add(l);
       ensurePolling();
       fresh().then(() => { if (listeners.has(l)) runListener(l); })
-             .catch((e) => { if (err) err(e); });
+             .catch((e) => {
+               // Data already loaded: show it; polling keeps retrying.
+               if (cache) { if (listeners.has(l)) runListener(l); return; }
+               if (err) err(e);
+             });
       return () => listeners.delete(l);
     }
 
@@ -1139,7 +1226,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       };
       return q;
     }
-    return { doc, collection, batch, ping: () => sync(), refreshAll: poll };
+    return { doc, collection, batch, ping: () => sync(), refreshAll: poll, status };
   }
 
   function makeBrowserDownloads() {
@@ -1280,10 +1367,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     try {
       const qs = await db.collection("eventos").orderBy("createdAt", "desc").get();
       if (qs.docs.length) {
-        return normalizeStockFinal(qs.docs[0].data()).map((s) => ({ nombre: s.nombre, cantidad: null }));
+        const d0 = qs.docs[0].data();
+        const prev = normalizeStockFinal(d0).map((s) => ({ nombre: s.nombre, unidad: s.unidad, cantidad: null }));
+        return d0.inventarioV2 ? prev : upgradeStockList(prev);
       }
     } catch (e) { /* fall through to the plain default below */ }
-    return [{ nombre: "Cerveza", cantidad: null }, { nombre: "Coca-Cola", cantidad: null }];
+    return DEFAULT_STOCK.map((x) => ({ ...x }));
   }
 
   async function createFreshEvent() {
@@ -1295,6 +1384,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       createdAt: new Date().toISOString(),
       closedAt: null,
       stockFinal,
+      inventarioV2: true,
     });
     return ref.id;
   }
@@ -1337,6 +1427,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     unsubEvento = db.doc(`eventos/${id}`).onSnapshot((snap) => {
       const d = snap.exists ? snap.data() : {};
+      if (snap.exists && !d.inventarioV2 && !d.closedAt) {
+        const upgraded = upgradeStockList(normalizeStockFinal(d));
+        d.stockFinal = upgraded;
+        db.doc(`eventos/${id}`).update({ stockFinal: upgraded, inventarioV2: true })
+          .catch((err) => logError("Actualizar lista de inventario", err));
+      }
       eventInfo = {
         nombre: d.nombre || "", fecha: d.fecha || "", local: d.local || "",
         stockFinal: normalizeStockFinal(d),
@@ -1447,7 +1543,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // Jump to Resumen and put the cursor right in the missing field.
   function focusEventFix() {
     document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "resumen"));
-    ["gastos", "ingresos", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "resumen"; });
+    ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "resumen"; });
     const target = (!eventInfo.nombre || !eventInfo.nombre.trim()) ? $("evNombre") : $("evFecha");
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     target.focus();
@@ -1605,7 +1701,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const name = btn.dataset.tab;
-      ["gastos", "ingresos", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
+      ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
       if (name === "eventos") loadEventos();
     });
   });
@@ -1663,7 +1759,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!el) return;
     const counted = previousStockFinal.filter((s) => s.nombre && s.cantidad != null);
     if (!counted.length) { el.textContent = ""; return; }
-    const parts = counted.map((s) => `${s.nombre} ${s.cantidad}`).join(", ");
+    const parts = counted.map((s) => `${s.nombre} ${fmtCantidad(s.cantidad, s.unidad)}`).join(", ");
     el.textContent = `Lo contado en "${previousStockEventLabel || "la noche anterior"}": ${parts}.`;
   }
 
@@ -1671,17 +1767,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     renderStockPrevHint();
     const list = $("stockList");
     if (!eventInfo.stockFinal.length) {
-      list.innerHTML = '<div class="empty">Sin tipos todavía. Añade cerveza, Coca-Cola, Fanta…</div>';
+      list.innerHTML = '<div class="empty">Sin productos todavía. Añade cerveza, Coca-Cola, vino…</div>';
       return;
     }
-    const prevMap = new Map(previousStockFinal.filter((s) => s.nombre).map((s) => [s.nombre.trim().toLowerCase(), s.cantidad]));
+    const prevMap = new Map(previousStockFinal.filter((s) => s.nombre).map((s) => [stockKey(s.nombre), s]));
     list.innerHTML = eventInfo.stockFinal.map((item, idx) => {
-      const prev = prevMap.get((item.nombre || "").trim().toLowerCase());
-      const prevHint = prev != null ? `<div class="stock-prev">Antes: ${prev}</div>` : "";
+      const prev = prevMap.get(stockKey(item.nombre));
+      const prevHint = prev && prev.cantidad != null ? `<div class="stock-prev">Antes: ${esc(fmtCantidad(prev.cantidad, prev.unidad))}</div>` : "";
+      const isL = item.unidad === "L";
       return `
       <div class="stock-row" data-idx="${idx}">
         <div class="stock-name">${esc(item.nombre)}${prevHint}</div>
-        <input type="number" inputmode="numeric" min="0" step="1" placeholder="${prev != null ? prev : 0}" value="${item.cantidad != null ? item.cantidad : ""}">
+        <input type="number" inputmode="${isL ? "decimal" : "numeric"}" min="0" step="${isL ? "0.1" : "1"}" placeholder="0" value="${item.cantidad != null ? item.cantidad : ""}" aria-label="${esc(item.nombre)} (${isL ? "litros" : "unidades"})">
+        <span class="stock-unit">${isL ? "L" : "uds"}</span>
         <button type="button" class="stock-remove" aria-label="Quitar ${esc(item.nombre)}">✕</button>
       </div>`;
     }).join("");
@@ -1691,7 +1789,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!row || e.target.tagName !== "INPUT") return;
     const idx = Number(row.dataset.idx);
     const v = e.target.value;
-    const next = eventInfo.stockFinal.map((item, i) => i === idx ? { ...item, cantidad: v === "" ? null : Math.max(0, parseInt(v, 10) || 0) } : item);
+    const next = eventInfo.stockFinal.map((item, i) => i === idx ? { ...item, cantidad: parseCantidad(v, item.unidad) } : item);
     saveStockFinal(next);
   });
   $("stockList").addEventListener("click", (e) => {
@@ -1708,9 +1806,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const input = $("stockNuevoNombre");
     const nombre = input.value.trim();
     if (!nombre) return;
-    const yaExiste = eventInfo.stockFinal.some((item) => item.nombre.toLowerCase() === nombre.toLowerCase());
-    if (yaExiste) { toast("Ese tipo ya está en la lista."); return; }
-    const next = [...eventInfo.stockFinal, { nombre, cantidad: null }];
+    const yaExiste = eventInfo.stockFinal.some((item) => stockKey(item.nombre) === stockKey(nombre));
+    if (yaExiste) { toast("Ese producto ya está en la lista."); return; }
+    const unidad = $("stockNuevoUnidad").value === "L" ? "L" : "uds";
+    const next = [...eventInfo.stockFinal, { nombre, unidad, cantidad: null }];
     saveStockFinal(next);
     renderStockList();
     input.value = "";
@@ -2180,7 +2279,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       ? stock.map((s, idx) => `
         <div class="stock-row" data-idx="${idx}">
           <div class="stock-name">${esc(s.nombre)}</div>
-          <input type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="${s.cantidad != null ? s.cantidad : ""}">
+          <input type="number" inputmode="${s.unidad === "L" ? "decimal" : "numeric"}" min="0" step="${s.unidad === "L" ? "0.1" : "1"}" placeholder="0" value="${s.cantidad != null ? s.cantidad : ""}">
+          <span class="stock-unit">${s.unidad === "L" ? "L" : "uds"}</span>
           <button type="button" class="stock-remove" aria-label="Quitar ${esc(s.nombre)}">✕</button>
         </div>`).join("")
       : '<div class="empty">Sin tipos registrados en este evento.</div>';
@@ -2216,7 +2316,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const ev = eventosCache[deletingEventoIdx];
     if (!ev) return;
     const v = e.target.value;
-    const next = (ev.stockFinal || []).map((item, i) => i === idx ? { ...item, cantidad: v === "" ? null : Math.max(0, parseInt(v, 10) || 0) } : item);
+    const next = (ev.stockFinal || []).map((item, i) => i === idx ? { ...item, cantidad: parseCantidad(v, item.unidad) } : item);
     saveEventoDetalleStock(deletingEventoIdx, next);
   });
   $("eventoDetalleStockList").addEventListener("click", (e) => {
@@ -2240,7 +2340,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!ev) return;
     const yaExiste = (ev.stockFinal || []).some((item) => item.nombre.toLowerCase() === nombre.toLowerCase());
     if (yaExiste) { toast("Ese tipo ya está en la lista."); return; }
-    const next = [...(ev.stockFinal || []), { nombre, cantidad: null }];
+    const next = [...(ev.stockFinal || []), { nombre, unidad: guessUnidad(nombre), cantidad: null }];
     saveEventoDetalleStock(deletingEventoIdx, next);
     renderEventoDetalleStock({ ...ev, stockFinal: next });
     input.value = "";
@@ -2281,12 +2381,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         const freshId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         const stockFinal = await getSeedStockFinal();
         await deleteEventCompletely(ev.id, [
-          { op: "set", path: `eventos/${freshId}`, data: { nombre: "", fecha: todayISO(), local: "Zebra", createdAt: new Date().toISOString(), closedAt: null, stockFinal } },
+          { op: "set", path: `eventos/${freshId}`, data: { nombre: "", fecha: todayISO(), local: "Zebra", createdAt: new Date().toISOString(), closedAt: null, stockFinal, inventarioV2: true } },
           { op: "set", path: "app/state", data: { currentEventId: freshId } },
         ]);
         switchToEvent(freshId);
         document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "gastos"));
-        ["gastos", "ingresos", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
+        ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
       } else {
         await deleteEventCompletely(ev.id);
       }
@@ -2388,14 +2488,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     // the sheet gets one "Latas X restantes" column per distinct type
     // seen across every event, in first-seen order.
     const stockTypes = [];
+    const stockUnits = {};
     for (const ev of events) {
       for (const item of ev.stockFinal || []) {
         const nombre = (item.nombre || "").trim();
-        if (nombre && !stockTypes.includes(nombre)) stockTypes.push(nombre);
+        if (nombre && !stockTypes.includes(nombre)) { stockTypes.push(nombre); stockUnits[nombre] = item.unidad || guessUnidad(nombre); }
       }
     }
     const resumenHeader = ["Fecha", "Evento", "Local", "Estado", "Total gastos (€)", "Bizum (€)", "Tarjeta (€)", "Efectivo (€)", "Total ingresos (€)", "Ganancias (€)"]
-      .concat(stockTypes.map((t) => `Latas ${t} restantes`));
+      .concat(stockTypes.map((t) => `${t} restantes (${stockUnits[t] === "L" ? "L" : "uds"})`));
     const resumenRows = [resumenHeader];
     let sumG = 0, sumB = 0, sumT = 0, sumE = 0;
     for (const ev of events) {
@@ -2620,7 +2721,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       loadHistoricalData();
 
       document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "gastos"));
-      ["gastos", "ingresos", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
+      ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
 
       $("closeBackdrop").hidden = true;
       toast(drivePushed ? "Caja cerrada y guardada en Drive." : "Caja cerrada. Excel descargado.");
