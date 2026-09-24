@@ -874,7 +874,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v22-web";
+  const BUILD_VERSION = "v23-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1159,19 +1159,50 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return () => listeners.delete(l);
     }
 
+    // Writes go to the server ONE AT A TIME, in the order they were made.
+    // Sent in parallel, a request Google stalls (and the app retries 20 s
+    // later) could land AFTER a newer write to the same document and put
+    // the old value back — e.g. typing a whole inventory quickly lost some
+    // counts. Queued writes to the same document that have not been sent
+    // yet are merged, so the server always ends on the latest state.
+    let writeChain = Promise.resolve();
+    const queued = new Map();   // path -> pending {action, data} not yet sent
+    function enqueue(send) {
+      const p = writeChain.then(send, send);
+      writeChain = p.catch(() => {});
+      return p;
+    }
     async function write(action, path, data) {
       writeGen++;
       pendingWrites++;
-      try {
-        await api(action, data === undefined ? { path } : { path, data });
-      } finally {
-        pendingWrites--;
-        writeGen++;
-      }
+      // Local copy first (optimistic): what the person just typed is what
+      // every render shows from now on. Updating it only when the request
+      // finished let an OLDER write's completion wipe values typed after it.
       if (!cache) cache = new Map();
       if (action === "setDoc") cache.set(path, clone(data) || {});
       else if (action === "updateDoc") cache.set(path, Object.assign({}, cache.get(path) || {}, clone(data) || {}));
       else if (action === "deleteDoc") cache.delete(path);
+      try {
+        const q = queued.get(path);
+        if (q && action === "updateDoc" && q.action === "updateDoc") {
+          Object.assign(q.data, clone(data) || {});
+          await q.promise;
+        } else {
+          const entry = { action, data: data === undefined ? undefined : (clone(data) || {}) };
+          queued.set(path, entry);
+          entry.promise = enqueue(() => {
+            if (queued.get(path) === entry) queued.delete(path);
+            return api(entry.action, entry.data === undefined ? { path } : { path, data: entry.data });
+          });
+          await entry.promise;
+        }
+      } finally {
+        pendingWrites--;
+        writeGen++;
+        // Nothing pending any more: re-read the server so a write that
+        // failed for good doesn't leave the screen showing unsaved data.
+        if (pendingWrites === 0) cacheAt = 0;
+      }
       notifyAll();
     }
 
@@ -1182,7 +1213,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       writeGen++;
       pendingWrites++;
       try {
-        await api("batch", { ops: ops.map((o) => (o.op === "delete" ? { op: o.op, path: o.path } : { op: o.op, path: o.path, data: o.data || {} })) });
+        const payload = { ops: ops.map((o) => (o.op === "delete" ? { op: o.op, path: o.path } : { op: o.op, path: o.path, data: o.data || {} })) };
+        await enqueue(() => api("batch", payload));
       } finally {
         pendingWrites--;
         writeGen++;
