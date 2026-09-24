@@ -286,6 +286,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .debt-sub { font-size: 12px; color: var(--ink-faint); margin-top: 2px; overflow-wrap: anywhere; }
   .btn-ok { flex: 0 0 auto; min-width: 52px; min-height: 40px; border-radius: 10px; border: 1px solid var(--income); background: var(--surface); color: var(--income); font-weight: 700; font-size: 14px; cursor: pointer; }
   .btn-ok:disabled { opacity: .5; }
+  .debt-btns { display: flex; gap: 6px; flex: 0 0 auto; }
+  .btn-part { min-width: 52px; min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 600; font-size: 13.5px; cursor: pointer; }
+  .debt-paid { font-size: 12.5px; font-weight: 600; margin-top: 2px; }
+  .debt-hist { font-size: 12px; margin-top: 4px; }
+  .debt-hist summary { cursor: pointer; color: var(--income); }
+  .debt-hist ol { margin: 4px 0 0; padding-left: 18px; color: var(--ink-faint); }
+  .over-warn { border: 1px solid var(--expense); border-radius: 10px; padding: 10px; margin-bottom: 12px; font-size: 13.5px; }
+  .over-warn .btn { margin-top: 8px; width: 100%; }
+  .pago-row.clickable { cursor: pointer; }
+  .debt-row { align-items: flex-start; }
+  .debt-row .amount { margin-top: 10px; }
   .debt-total { display: flex; justify-content: space-between; padding: 10px 2px 2px; margin-top: 4px; border-top: 1px solid var(--line); font-weight: 600; font-size: 14px; }
   .debt-total .amount { font-family: "JetBrains Mono", monospace; color: var(--expense); }
   .save-chip { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--amber-soft); color: var(--income); vertical-align: 1px; }
@@ -374,7 +385,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   </div>
   <div class="eyebrow">Caja de barra</div>
   <div class="event-name" id="hdrNombre">Cargando…</div>
-  <div class="event-sub"><span id="hdrSub">&nbsp;</span> <span id="saveChip" class="save-chip" hidden></span></div>
+  <div class="event-sub"><span id="hdrSub">&nbsp;</span> <span id="saveChip" class="save-chip" hidden></span> <span id="excelChip" class="save-chip" hidden></span></div>
   <div class="balance-pill">
     <div>
       <div class="label">Balance de esta noche</div>
@@ -545,7 +556,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="card" style="margin-bottom:10px;" id="reembolsosCard">
       <div id="reembolsosList"></div>
     </div>
-    <div class="section-hint" id="pagosLabel" style="margin-top:14px;font-weight:600;color:var(--ink);" hidden>Reembolsos hechos <span style="font-weight:400;">(✕ para deshacer)</span></div>
+    <div class="section-hint" id="pagosLabel" style="margin-top:14px;font-weight:600;color:var(--ink);" hidden>Reembolsos hechos <span style="font-weight:400;">(toca uno para editar nota, fecha o importe · ✕ para deshacer)</span></div>
     <div class="stack" id="pagosList" style="margin-bottom:10px;"></div>
     <button class="btn btn-secondary" type="button" id="btnAddPago" style="margin-bottom:18px;">Registrar pago parcial</button>
 
@@ -665,7 +676,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 <div class="sheet-backdrop" id="addPagoBackdrop" hidden>
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">Registrar pago realizado</div>
+    <div class="sheet-title" id="pagoSheetTitle">Registrar pago realizado</div>
+    <div class="section-hint" id="pagoPendHint" style="margin-top:-6px;" hidden></div>
     <form id="formAddPago">
       <div class="field">
         <label for="pagoPersona">A quién se paga<span class="req"> *</span></label>
@@ -675,7 +687,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="row2">
         <div class="field">
           <label for="pagoImporte">Importe (€)<span class="req"> *</span></label>
-          <input id="pagoImporte" type="number" inputmode="decimal" step="0.01" min="0.01" required>
+          <input id="pagoImporte" type="number" inputmode="decimal" step="any" min="0" required>
         </div>
         <div class="field">
           <label for="pagoFecha">Fecha</label>
@@ -684,10 +696,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       </div>
       <div class="field" style="margin-bottom:14px;">
         <label for="pagoNota">Nota (opcional)</label>
-        <input id="pagoNota" type="text" placeholder="Ej. Pagado desde la caja de efectivo">
+        <input id="pagoNota" type="text" placeholder="Ej. Bizum, 1ª parte · efectivo de la caja">
+      </div>
+      <div class="over-warn" id="pagoOverWarn" hidden>
+        <div id="pagoOverText"></div>
+        <button class="btn btn-secondary" type="button" id="pagoOverConfirm">Sí, guardar (queda a favor)</button>
       </div>
       <div class="stack">
-        <button class="btn btn-primary" type="submit">Guardar pago</button>
+        <button class="btn btn-primary" type="submit" id="pagoSubmit">Guardar pago</button>
         <button class="btn btn-ghost" type="button" id="btnCancelAddPago" style="width:100%;">Cancelar</button>
       </div>
     </form>
@@ -804,6 +820,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }, 150);
     });
   }
+  // Lists ignore a re-draw with identical HTML. Re-drawing an unchanged
+  // list on every refresh replaced its buttons, and a tap that landed
+  // during the swap was lost (typing in a list field was reset too).
+  function skipIdenticalRedraws(el) {
+    if (!el) return;
+    const d = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
+    Object.defineProperty(el, "innerHTML", {
+      configurable: true,
+      get() { return d.get.call(this); },
+      set(v) { if (this.__html === v) return; this.__html = v; d.set.call(this, v); },
+    });
+  }
   let toastTimer = null;
   function toast(msg) {
     const el = $("toast");
@@ -868,6 +896,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       chip.hidden = !st;
       chip.className = "save-chip" + (/sin guardar/.test(st) ? " bad" : /guardando/.test(st) ? " busy" : "");
     }
+    const xc = $("excelChip");
+    if (xc && typeof driveSync !== "undefined" && driveSync.state !== "idle") {
+      const lbl = driveSyncLabel();
+      xc.textContent = "Excel: " + lbl;
+      xc.hidden = false;
+      xc.className = "save-chip" + (driveSync.state === "error" ? " bad" : driveSync.state === "ok" ? "" : " busy");
+    }
     const el = $("diagLine");
     if (!el) return;
     const parts = [
@@ -894,7 +929,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v26-web";
+  const BUILD_VERSION = "v27-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1408,6 +1443,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------------------------------------------------------------------
   // Capability bootstrap
   // ---------------------------------------------------------------------
+  ["reembolsosList", "pagosList", "gastosList", "ingresosList", "eventosList", "stockList"].forEach((id) => skipIdenticalRedraws($(id)));
+
   async function boot() {
     try {
       db = makeRemoteDb();
@@ -1890,10 +1927,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     } else {
       el.innerHTML = pendientes.map((a) => {
         const detalle = [...a.porEvento.entries()].map(([ev, v]) => `${esc(ev)}: ${eur(v)}`).join(" · ");
+        // What has already been paid to this person, when, and the note —
+        // so paying in several parts stays readable at a glance.
+        const suyos = pagos.filter((p) => personaKey(p.persona) === a.nombre)
+          .sort((x, y) => (y.fecha || "").localeCompare(x.fecha || "") || (y.createdAt || "").localeCompare(x.createdAt || ""));
+        const pagado = round2(a.pagadoItem + a.pagadoLedger);
+        const resumen = `<div class="debt-paid">Pagado ${eur(pagado)} · Queda ${eur(a.pendiente)}</div>`;
+        const historial = suyos.length
+          ? `<details class="debt-hist"><summary>Historial de pagos (${suyos.length})</summary><ol>${suyos.map((p) => `<li>${esc(fmtDate(p.fecha))} · ${eur(p.importe)}${p.nota ? " · " + esc(p.nota) : ""}</li>`).join("")}</ol></details>`
+          : "";
         return `<div class="debt-row" data-persona="${esc(a.nombre)}">
-          <div class="debt-main"><span class="name">${esc(a.nombre)}</span>${detalle ? `<div class="debt-sub">${detalle}</div>` : ""}</div>
+          <div class="debt-main"><span class="name">${esc(a.nombre)}</span>${resumen}${detalle ? `<div class="debt-sub">De qué noche: ${detalle}</div>` : ""}${historial}</div>
           <span class="amount">${eur(a.pendiente)}</span>
-          <button type="button" class="btn-ok" data-persona="${esc(a.nombre)}" data-importe="${a.pendiente.toFixed(2)}" aria-label="Marcar reembolsado a ${esc(a.nombre)} ${eur(a.pendiente)}">OK</button>
+          <div class="debt-btns">
+            <button type="button" class="btn-part" data-persona="${esc(a.nombre)}" data-pendiente="${a.pendiente.toFixed(2)}" aria-label="Pago parcial a ${esc(a.nombre)}">Parcial</button>
+            <button type="button" class="btn-ok" data-persona="${esc(a.nombre)}" data-importe="${a.pendiente.toFixed(2)}" aria-label="Marcar reembolsado a ${esc(a.nombre)} ${eur(a.pendiente)}">OK</button>
+          </div>
         </div>`;
       }).join("") + aFavor.map((a) => `<div class="debt-row">
           <div class="debt-main"><span class="name">${esc(a.nombre)}</span><div class="debt-sub">Se le ha pagado de más</div></div>
@@ -1907,10 +1956,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       pagosEl.innerHTML = "";
     } else {
       pagosEl.innerHTML = pagos.map((p) => `
-        <div class="pago-row" data-id="${esc(p.id)}">
+        <div class="pago-row clickable" data-id="${esc(p.id)}" role="button" tabindex="0" title="Toca para editar nota, fecha o importe">
           <div class="pago-main">
-            <div class="pago-name">${p.tipo === "ok" ? "✓ Reembolsado a" : "Pago a"} ${esc(p.persona || "—")}</div>
-            <div class="pago-sub">${esc(fmtDate(p.fecha))}${p.nota ? " · " + esc(p.nota) : ""}</div>
+            <div class="pago-name">${p.tipo === "ok" ? "✓ Reembolsado a" : p.tipo === "parcial" ? "Pago parcial a" : "Pago a"} ${esc(p.persona || "—")}</div>
+            <div class="pago-sub">${esc(fmtDate(p.fecha))}${p.nota ? " · " + esc(p.nota) : " · <i>sin nota — toca para añadir</i>"} ✎</div>
           </div>
           <div class="pago-amount">− ${eur(p.importe)}</div>
           <button type="button" class="pago-remove" data-id="${esc(p.id)}" aria-label="Deshacer pago a ${esc(p.persona || "")}">✕</button>
@@ -1926,6 +1975,59 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function slugify(s) {
     return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
   }
+  // Payment sheet — three uses: "Parcial" from a person's row (amount
+  // prefilled with what is pending, editable), "Registrar pago" (blank),
+  // and editing an existing payment (R2: nota, fecha, importe, incl. OK).
+  let pagoCtx = null; // { mode: "new" | "edit", id?, persona?, overOk }
+  function abrirPago(persona, pendiente, pago) {
+    // A second tap while the sheet is already open must not wipe what is
+    // being typed (this reset the amount mid-entry before v27).
+    if (!$("addPagoBackdrop").hidden) return;
+    const dl = $("pagoPersonaList");
+    dl.innerHTML = [...debtsPorPersona().keys()].map((n) => `<option value="${esc(n)}">`).join("");
+    $("formAddPago").reset();
+    $("pagoOverWarn").hidden = true;
+    $("pagoPersona").readOnly = false;
+    if (pago) {
+      pagoCtx = { mode: "edit", id: pago.id, persona: personaKey(pago.persona), overOk: false, tipo: pago.tipo || "pago", importeAntes: Number(pago.importe) || 0 };
+      $("pagoPersona").value = pago.persona || "";
+      $("pagoPersona").readOnly = true;
+      $("pagoImporte").value = (Number(pago.importe) || 0).toFixed(2);
+      $("pagoFecha").value = pago.fecha || todayISO();
+      $("pagoNota").value = pago.nota || "";
+      $("pagoSheetTitle").textContent = `Editar pago a ${pago.persona || ""}`;
+      $("pagoPendHint").textContent = "Cambia la nota, la fecha o el importe. Lo pendiente se recalcula solo.";
+      $("pagoPendHint").hidden = false;
+      $("pagoSubmit").textContent = "Guardar cambios";
+    } else {
+      pagoCtx = { mode: "new", persona: persona ? personaKey(persona) : null, overOk: false };
+      $("pagoFecha").value = todayISO();
+      $("pagoSubmit").textContent = "Guardar pago";
+      if (persona) {
+        $("pagoPersona").value = persona;
+        $("pagoImporte").value = pendiente.toFixed(2);
+        $("pagoSheetTitle").textContent = `Pago parcial a ${persona}`;
+        $("pagoPendHint").textContent = `Pendiente ahora: ${eur(pendiente)}. Cambia el importe si hoy pagáis solo una parte; el resto seguirá pendiente.`;
+        $("pagoPendHint").hidden = false;
+      } else {
+        $("pagoSheetTitle").textContent = "Registrar pago realizado";
+        $("pagoPendHint").hidden = true;
+      }
+    }
+    $("addPagoBackdrop").hidden = false;
+    setTimeout(() => { const f = $(persona || pago ? "pagoImporte" : "pagoPersona"); f.focus(); if (f.select) f.select(); }, 50);
+  }
+  // Pending for a person, ignoring one payment (the one being edited).
+  function pendienteSin(persona, pagoIdExcluido) {
+    const lista = pagos.filter((p) => p.id !== pagoIdExcluido);
+    const a = calcReembolsos([...historicalGastos, ...currentGastosLabeled()], lista).personas.get(personaKey(persona));
+    return a ? a.pendiente : 0;
+  }
+  $("reembolsosList").addEventListener("click", (e) => {
+    const b = e.target.closest(".btn-part");
+    if (!b || !db) return;
+    abrirPago(b.dataset.persona, round2(parseFloat(b.dataset.pendiente)), null);
+  });
   $("reembolsosList").addEventListener("click", async (e) => {
     const btn = e.target.closest(".btn-ok");
     if (!btn || !db) return;
@@ -2253,37 +2355,59 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------------------------------------------------------------------
   $("btnAddPago").addEventListener("click", () => {
     if (!db) { toast("No se puede guardar sin conexión de datos."); return; }
-    const dl = $("pagoPersonaList");
-    dl.innerHTML = [...debtsPorPersona().keys()].map((n) => `<option value="${esc(n)}">`).join("");
-    $("formAddPago").reset();
-    $("pagoFecha").value = todayISO();
-    $("addPagoBackdrop").hidden = false;
-    setTimeout(() => $("pagoPersona").focus(), 50);
+    abrirPago(null, null, null);
   });
   $("btnCancelAddPago").addEventListener("click", () => { $("addPagoBackdrop").hidden = true; });
   $("addPagoBackdrop").addEventListener("click", (e) => { if (e.target === $("addPagoBackdrop")) $("addPagoBackdrop").hidden = true; });
+  $("pagoOverConfirm").addEventListener("click", () => {
+    if (!pagoCtx) return;
+    pagoCtx.overOk = true;
+    $("formAddPago").requestSubmit();
+  });
+  // Changing the amount after the warning asks again.
+  $("pagoImporte").addEventListener("input", () => { if (pagoCtx) pagoCtx.overOk = false; $("pagoOverWarn").hidden = true; });
   $("formAddPago").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!db) return;
+    if (!db || !pagoCtx) return;
     const persona = $("pagoPersona").value.trim();
-    const importe = parseFloat($("pagoImporte").value);
+    const importe = round2(parseFloat(String($("pagoImporte").value).replace(",", ".")));
     const fecha = $("pagoFecha").value || todayISO();
     const nota = $("pagoNota").value.trim();
     if (!persona) { toast("Indica a quién se paga."); return; }
     if (!(importe > 0)) { toast("Indica un importe mayor que 0."); return; }
-    const submitBtn = e.target.querySelector("button[type=submit]");
+    const editando = pagoCtx.mode === "edit";
+    const pendNow = pendienteSin(persona, editando ? pagoCtx.id : null);
+    const exceso = round2(importe - pendNow);
+    if (exceso > 0.004 && !pagoCtx.overOk) {
+      $("pagoOverText").textContent = pendNow > 0.004
+        ? `Son ${eur(exceso)} más de lo pendiente (${eur(pendNow)}). Si lo guardas, ${persona} quedará con ${eur(exceso)} a favor.`
+        : `${persona} no tiene nada pendiente. Si lo guardas, quedará con ${eur(exceso)} a favor.`;
+      $("pagoOverWarn").hidden = false;
+      return;
+    }
+    const tipo = exceso > 0.004 ? "pago"
+      : exceso < -0.004 ? "parcial"
+      : (editando && pagoCtx.tipo === "ok" ? "ok" : (editando ? pagoCtx.tipo : "pago"));
+    const submitBtn = $("pagoSubmit");
     submitBtn.disabled = true;
     try {
-      // "evento" is just a label of which night was open when this got
-      // logged — for the record, not a functional link — so the payment
-      // stays valid and visible even after that night (or any other) closes.
-      await db.collection("pagos").add({
-        persona, importe, fecha, nota,
-        evento: (eventInfo.nombre && eventInfo.nombre.trim()) || eventInfo.fecha || "",
-        createdAt: new Date().toISOString(),
-      });
+      if (editando) {
+        await db.doc(`pagos/${pagoCtx.id}`).update({ importe, fecha, nota, tipo, editadoAt: new Date().toISOString() });
+      } else {
+        // "evento" is just a label of which night was open when this got
+        // logged — for the record, not a functional link.
+        await db.collection("pagos").add({
+          persona, importe, fecha, nota, tipo,
+          evento: evLabel(eventInfo),
+          createdAt: new Date().toISOString(),
+        });
+      }
       $("addPagoBackdrop").hidden = true;
-      toast("Pago registrado.");
+      const resta = round2(-exceso);
+      toast((editando ? "Pago actualizado. " : `Pago de ${eur(importe)} apuntado. `) +
+        (resta > 0.004 ? `A ${persona} le quedan ${eur(resta)}.` : exceso > 0.004 ? `${persona} queda con ${eur(exceso)} a favor.` : `${persona} queda al día.`));
+      pagoCtx = null;
+      scheduleDriveSync(0);
     } catch (err) {
       toastErr("No se pudo guardar el pago", err);
     } finally {
@@ -2291,6 +2415,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
   });
   $("pagosList").addEventListener("click", async (e) => {
+    const edit = !e.target.closest(".pago-remove") && e.target.closest(".pago-row");
+    if (edit && db) {
+      const p = pagos.find((x) => x.id === edit.dataset.id);
+      if (p) abrirPago(null, null, p);
+      return;
+    }
     const btn = e.target.closest(".pago-remove");
     if (!btn || !db) return;
     const id = btn.dataset.id;
@@ -2750,7 +2880,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     for (const p of ordenadosP) {
       const importe = Number(p.importe) || 0;
       totalPagosAll += importe;
-      pagosRows.push([fmtDate(p.fecha), p.evento || "", p.persona || "", importe, p.tipo === "ok" ? "OK — reembolso completo" : "Pago registrado", p.nota || ""]);
+      pagosRows.push([fmtDate(p.fecha), p.evento || "", p.persona || "", importe, p.tipo === "ok" ? "OK — reembolso completo" : p.tipo === "parcial" ? "Pago parcial" : "Pago registrado", p.nota || ""]);
     }
     pagosRows.push(["", "", "TOTAL", round2(totalPagosAll), "", ""]);
 
@@ -2925,6 +3055,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // during a rewrite queues exactly one more.
   // ---------------------------------------------------------------------
   const DRIVE_SYNC_DEBOUNCE_MS = 45000;
+  const DRIVE_RETRY_MS = 20000; // a failed Excel upload is retried on its own after 20 s
   let driveSyncTimer = null, driveSyncRunning = false, driveSyncAgain = false;
   let driveSync = { state: "idle", at: 0, err: "" };
   let lastDriveSig = null, driveUploadCount = 0;
@@ -2933,7 +3064,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (driveSync.state === "saving") return "guardando…";
     if (driveSync.state === "pending") return "cambios pendientes";
     if (driveSync.state === "ok") return "al día " + t;
-    if (driveSync.state === "error") return "error, reintentando";
+    if (driveSync.state === "error") return "error, reintentando en 20 s";
     return "—";
   }
   function scheduleDriveSync(delay) {
@@ -2968,7 +3099,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     } catch (err) {
       driveSync = { state: "error", at: driveSync.at, err: describeErr(err) };
       logError("Guardar el Excel en Drive (automático)", err);
-      setTimeout(() => scheduleDriveSync(0), 120000);
+      setTimeout(() => scheduleDriveSync(0), DRIVE_RETRY_MS);
     } finally {
       driveSyncRunning = false;
       renderDiag();
