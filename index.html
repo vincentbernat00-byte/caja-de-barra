@@ -852,7 +852,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v20-web";
+  const BUILD_VERSION = "v21-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -949,6 +949,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         // overloaded: that's transient, so retry instead of failing.
         try { j = JSON.parse(text); }
         catch (e) { throw Object.assign(new Error("Google no respondió bien (servidor ocupado)"), { code: "bad_response", retry: true }); }
+        // "unauthorized" can only mean the request arrived WITHOUT its key
+        // (the key is a fixed constant on both sides): the POST body got
+        // lost on the way (Google turned it into a bare GET). The server
+        // rejects those before touching anything, so retrying is safe.
+        if (j && !j.ok && j.code === "unauthorized") throw Object.assign(new Error("Google perdió la petición (reintentando)"), { code: "unauthorized", retry: true });
         if (!j || !j.ok) throw Object.assign(new Error((j && j.error) || "Error del servidor"), { code: (j && j.code) || "server_error" });
         return j;
       } catch (e) {
@@ -1083,6 +1088,27 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       notifyAll();
     }
 
+    // Several writes in ONE request, applied by the server under a single
+    // lock (action "batch" in Code.gs). ops: [{op:"set"|"update"|"delete", path, data?}]
+    async function batch(ops) {
+      if (!ops || !ops.length) return;
+      writeGen++;
+      pendingWrites++;
+      try {
+        await api("batch", { ops: ops.map((o) => (o.op === "delete" ? { op: o.op, path: o.path } : { op: o.op, path: o.path, data: o.data || {} })) });
+      } finally {
+        pendingWrites--;
+        writeGen++;
+      }
+      if (!cache) cache = new Map();
+      for (const o of ops) {
+        if (o.op === "set") cache.set(o.path, clone(o.data) || {});
+        else if (o.op === "update") cache.set(o.path, Object.assign({}, cache.get(o.path) || {}, clone(o.data) || {}));
+        else if (o.op === "delete") cache.delete(o.path);
+      }
+      notifyAll();
+    }
+
     function doc(path) {
       const id = path.split("/").pop();
       const compute = () => { const r = localGet(path); return docSnap(id, r.exists, r.data); };
@@ -1113,7 +1139,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       };
       return q;
     }
-    return { doc, collection, ping: () => sync(), refreshAll: poll };
+    return { doc, collection, batch, ping: () => sync(), refreshAll: poll };
   }
 
   function makeBrowserDownloads() {
@@ -1820,6 +1846,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!db || !currentEventId || !editingGastoId) return;
     const btn = $("btnDeleteGasto");
     btn.disabled = true;
+    btn.textContent = "Eliminando…";
     try {
       await db.doc(`eventos/${currentEventId}/gastos/${editingGastoId}`).delete();
       $("editGastoBackdrop").hidden = true;
@@ -1829,6 +1856,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       toastErr("No se pudo eliminar el gasto", err);
     } finally {
       btn.disabled = false;
+      btn.textContent = "Eliminar gasto";
     }
   });
 
@@ -1942,6 +1970,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!db || !currentEventId || !editingIngresoId) return;
     const btn = $("btnDeleteIngreso");
     btn.disabled = true;
+    btn.textContent = "Eliminando…";
     try {
       await db.doc(`eventos/${currentEventId}/ingresos/${editingIngresoId}`).delete();
       $("editIngresoBackdrop").hidden = true;
@@ -1951,6 +1980,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       toastErr("No se pudo eliminar el ingreso", err);
     } finally {
       btn.disabled = false;
+      btn.textContent = "Eliminar ingreso";
     }
   });
 
@@ -2049,14 +2079,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // Deleting an event removes its whole doc plus the gastos/ingresos
   // subcollections underneath it — Firestore doesn't cascade those on its
   // own, so each child doc is deleted explicitly before the parent.
-  async function deleteEventCompletely(id) {
+  // All of it goes to the server as ONE batch request (plus any extraOps,
+  // e.g. the replacement night) instead of one request per document —
+  // each Apps Script call costs ~3 s, so the old sequential version left
+  // the button on "Eliminando…" for half a minute.
+  async function deleteEventCompletely(id, extraOps) {
     const [gSnap, iSnap] = await Promise.all([
       db.collection(`eventos/${id}/gastos`).get(),
       db.collection(`eventos/${id}/ingresos`).get(),
     ]);
-    for (const d of gSnap.docs) await db.doc(`eventos/${id}/gastos/${d.id}`).delete();
-    for (const d of iSnap.docs) await db.doc(`eventos/${id}/ingresos/${d.id}`).delete();
-    await db.doc(`eventos/${id}`).delete();
+    const ops = [];
+    for (const d of gSnap.docs) ops.push({ op: "delete", path: `eventos/${id}/gastos/${d.id}` });
+    for (const d of iSnap.docs) ops.push({ op: "delete", path: `eventos/${id}/ingresos/${d.id}` });
+    ops.push({ op: "delete", path: `eventos/${id}` });
+    for (const o of extraOps || []) ops.push(o);
+    await db.batch(ops);
   }
 
   // A mistaken event (wrong night created by accident, a test entry, a
@@ -2237,16 +2274,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     btn.textContent = "Eliminando…";
     try {
       const wasCurrent = ev.id === currentEventId;
-      await deleteEventCompletely(ev.id);
-
       if (wasCurrent) {
-        // The night in progress just vanished — start a fresh, empty one so
-        // Gastos/Ingresos/Resumen always have somewhere to write to.
-        const newId = await createFreshEvent();
-        await db.doc("app/state").set({ currentEventId: newId });
-        switchToEvent(newId);
+        // The night in progress is going away — a fresh, empty one replaces
+        // it in the SAME request, so Gastos/Ingresos/Resumen always have
+        // somewhere to write to and there is never a moment with no night.
+        const freshId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        const stockFinal = await getSeedStockFinal();
+        await deleteEventCompletely(ev.id, [
+          { op: "set", path: `eventos/${freshId}`, data: { nombre: "", fecha: todayISO(), local: "Zebra", createdAt: new Date().toISOString(), closedAt: null, stockFinal } },
+          { op: "set", path: "app/state", data: { currentEventId: freshId } },
+        ]);
+        switchToEvent(freshId);
         document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "gastos"));
         ["gastos", "ingresos", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
+      } else {
+        await deleteEventCompletely(ev.id);
       }
       // Refresh everything the deleted event fed into: debts, the general
       // summary, and the Eventos list itself.
@@ -2255,7 +2297,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
       $("eventoDetalleBackdrop").hidden = true;
       deletingEventoIdx = null;
-      toast("Evento eliminado.");
+      toast(wasCurrent
+        ? "Evento eliminado. Se ha abierto una noche nueva vacía — ponle nombre en Gastos."
+        : "Evento eliminado.");
     } catch (err) {
       toastErr("No se pudo eliminar el evento", err);
     } finally {
