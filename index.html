@@ -840,7 +840,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function clearLoadErrors() {
     const before = appErrors.length;
     for (let i = appErrors.length - 1; i >= 0; i--) {
-      if (/^(No se pud(?:o|ieron) cargar|Cambios sin guardar)/.test(appErrors[i].msg)) appErrors.splice(i, 1);
+      if (/^(No se pud(?:o|ieron) cargar|Cambios sin guardar|Conectar con el servidor \(se reintenta)/.test(appErrors[i].msg)) appErrors.splice(i, 1);
     }
     if (appErrors.length !== before) renderErrBanner();
   }
@@ -894,7 +894,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v25-web";
+  const BUILD_VERSION = "v26-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1122,12 +1122,38 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return { docs: list, size: list.length, empty: list.length === 0, forEach: (fn) => list.forEach(fn) };
     };
 
+    // Google sometimes leaves a request hanging for many seconds. Reading
+    // is harmless to repeat, so if the full read hasn't answered in 4 s a
+    // second identical read is sent in parallel and whichever answers first
+    // wins (cuts the worst waits from 30 s+ to ~5 s). Writes are never
+    // doubled this way.
+    const HEDGE_MS = 4000;
+    function hedgedDump() {
+      return new Promise((resolve, reject) => {
+        let settled = false, started = 0, failed = 0, timer = null;
+        const go = () => {
+          started++;
+          api("dump").then((r) => {
+            if (settled) return;
+            settled = true; clearTimeout(timer); resolve(r);
+          }, (e) => {
+            if (settled) return;
+            failed++;
+            // Only SLOW reads are doubled; a read that failed outright
+            // (after its own retries) is reported, not repeated.
+            if (failed >= started) { settled = true; clearTimeout(timer); reject(e); }
+          });
+        };
+        go();
+        timer = setTimeout(() => { if (!settled && started < 2) go(); }, HEDGE_MS);
+      });
+    }
     function sync() {
       if (inflight) return inflight;
       inflight = (async () => {
         for (;;) {
           const gen = ackGen;
-          const r = await api("dump");
+          const r = await hedgedDump();
           // The server confirmed a write while this dump was in flight: the
           // dump may predate it, so fetch again rather than roll it back.
           if (gen !== ackGen) continue;
@@ -1391,9 +1417,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if (db.hasSnapshot()) {
         // Open instantly with the last data seen on this phone; Google's
         // answer replaces it a moment later.
-        db.ping().then(() => db.refreshAll && db.refreshAll()).catch((e) => logError("Conectar con el servidor", e));
+        db.ping().then(() => db.refreshAll && db.refreshAll()).catch(() => { /* polling keeps retrying */ });
       } else {
-        await db.ping();
+        // First open on this phone: nothing to show until Google answers.
+        // Never give up (the app used to stay disconnected until a manual
+        // reload): keep retrying with growing pauses and say so.
+        for (let intento = 1; ; intento++) {
+          try { await db.ping(); break; }
+          catch (e) {
+            $("hdrSub").textContent = `Google no responde, reintentando (${intento})…`;
+            if (intento === 3) logError("Conectar con el servidor (se reintenta solo)", e);
+            await sleep(Math.min(15000, 2000 * intento));
+          }
+        }
+        clearLoadErrors();
       }
     } catch (e) {
       logError("Conectar con el servidor", e);
