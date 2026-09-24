@@ -569,11 +569,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="section-hint history-note" id="driveHint" style="margin-top:-6px;">&nbsp;</div>
     </div>
 
-    <div class="section-title">Google Drive</div>
-    <div class="section-hint">Guarda ahora una copia del histórico completo en tu Google Drive, sin cerrar la caja. Siempre el mismo archivo.</div>
-    <div class="stack" style="margin-bottom:22px;">
-      <button class="btn btn-secondary" id="btnCopyDrive">Copiar a Google Drive</button>
-      <a class="btn btn-ghost" id="btnOpenDrive" href="#" target="_blank" rel="noopener" style="width:100%;" hidden>Abrir Google Drive</a>
+    <div class="section-title">Excel en Google Drive</div>
+    <div class="section-hint">Se guarda solo después de cada cambio, con todas las noches, siempre en el mismo archivo. Arriba ves si está al día.</div>
+    <div class="stack" style="margin-bottom:22px;" id="driveSection">
+      <a class="btn btn-secondary" id="btnOpenDrive" href="https://drive.google.com/file/d/1bZxMIPCdT9k6Y1hr6fhshrz0mLrrjjsj/view" target="_blank" rel="noopener" style="width:100%;">Abrir el Excel en Drive</a>
       <div class="section-hint history-note" id="driveCopyHint" style="margin-top:-6px;">&nbsp;</div>
     </div>
 
@@ -929,7 +928,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v27-web";
+  const BUILD_VERSION = "v28-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1497,6 +1496,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         // Every change made on this phone is pushed to the Drive Excel on
         // its own, once edits pause — no button needed.
         db.onLocalWrite(() => scheduleDriveSync(DRIVE_SYNC_DEBOUNCE_MS));
+        // Changes from a previous visit that never reached the Excel.
+        if (excelDirty()) scheduleDriveSync(3000);
       } catch (e) {
         $("hdrNombre").textContent = "No se pudo cargar";
         $("hdrSub").textContent = "Recarga la página para reintentarlo.";
@@ -1520,7 +1521,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       ? "Al cerrar, el histórico completo se guarda en Google Drive, siempre en el mismo archivo (mismo enlace)."
       : "";
     $("driveCopyHint").textContent = driveReady
-      ? "Cada copia actualiza el mismo archivo de Drive, con todas las noches."
+      ? "Guardado automático activado."
       : "";
     updateCloseButtonLabel();
     renderDiag();
@@ -3043,7 +3044,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   });
 
   // ---------------------------------------------------------------------
-  // Copiar a Google Drive — simple, non-destructive: pushes the current
+  // (v28: no manual copy button — the Excel is saved automatically) —
   // full history to the same Drive file without touching the night in
   // progress. "Abrir Google Drive" lets Vincent verify it landed.
   // ---------------------------------------------------------------------
@@ -3054,7 +3055,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // that made the change writes, and never two rewrites at once — a change
   // during a rewrite queues exactly one more.
   // ---------------------------------------------------------------------
-  const DRIVE_SYNC_DEBOUNCE_MS = 45000;
+  const DRIVE_SYNC_DEBOUNCE_MS = 20000; // Excel rewritten 20 s after the last change
   const DRIVE_RETRY_MS = 20000; // a failed Excel upload is retried on its own after 20 s
   let driveSyncTimer = null, driveSyncRunning = false, driveSyncAgain = false;
   let driveSync = { state: "idle", at: 0, err: "" };
@@ -3067,8 +3068,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (driveSync.state === "error") return "error, reintentando en 20 s";
     return "—";
   }
+  const EXCEL_DIRTY_KEY = "cajaBarra.excelDirty.v1";
+  const setExcelDirty = (v) => { try { v ? localStorage.setItem(EXCEL_DIRTY_KEY, String(Date.now())) : localStorage.removeItem(EXCEL_DIRTY_KEY); } catch (e) {} };
+  const excelDirty = () => { try { return !!localStorage.getItem(EXCEL_DIRTY_KEY); } catch (e) { return false; } };
   function scheduleDriveSync(delay) {
     if (!mcp || !db) return;
+    // Remembered on the phone until the Excel really has it: if the page is
+    // closed before the upload, the next opening finishes the job.
+    setExcelDirty(true);
     clearTimeout(driveSyncTimer);
     if (driveSync.state !== "saving") { driveSync.state = "pending"; renderDiag(); }
     driveSyncTimer = setTimeout(runDriveSync, Math.max(0, delay || 0));
@@ -3096,6 +3103,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         driveUploadCount++;
       }
       driveSync = { state: "ok", at: Date.now(), err: "" };
+      if (!driveSyncAgain && !(db.pending && db.pending() > 0)) setExcelDirty(false);
     } catch (err) {
       driveSync = { state: "error", at: driveSync.at, err: describeErr(err) };
       logError("Guardar el Excel en Drive (automático)", err);
@@ -3106,38 +3114,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if (driveSyncAgain) { driveSyncAgain = false; scheduleDriveSync(0); }
     }
   }
-
-  $("btnCopyDrive").addEventListener("click", async () => {
-    if (!db) { toast("No se puede leer sin conexión de datos."); return; }
-    if (!mcp) { toast("Esta vista no tiene acceso a Google Drive."); return; }
-    if (!eventIsComplete()) { toast("Ponle nombre y fecha al evento antes de copiar a Drive."); focusEventFix(); return; }
-    const btn = $("btnCopyDrive");
-    const original = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = "Copiando…";
-    try {
-      if (typeof XLSX === "undefined") {
-        btn.textContent = "Cargando Excel…";
-        if (!(await waitForXLSX())) { toast("No se pudo cargar el motor de Excel. Comprueba tu conexión e inténtalo de nuevo."); return; }
-        btn.textContent = "Copiando…";
-      }
-      const [events, pagosGlobal] = await Promise.all([fetchAllEvents(), fetchAllPagos()]);
-      const buf = buildHistoryWorkbook(events, pagosGlobal);
-      await saveWorkbookToDrive(buf);
-      driveSync = { state: "ok", at: Date.now(), err: "" };
-      renderDiag();
-      driveReady = true;
-      updateCloseButtonLabel();
-      await refreshDriveLink();
-      toast("Copiado en Google Drive.");
-    } catch (err) {
-      toast(driveErrorMessage(err));
-      logError("Copiar a Google Drive", err);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = original;
-    }
-  });
 
   // ---------------------------------------------------------------------
   // Cerrar caja — confirm, then close + save history + start fresh night
