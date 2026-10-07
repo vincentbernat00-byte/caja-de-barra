@@ -322,11 +322,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   .stock-row .stock-name { flex: 1; font-weight: 600; font-size: 14.5px; }
   .stock-prev { font-weight: 400; font-size: 12px; color: var(--ink-faint); margin-top: 1px; }
-  .stock-row input[type="number"] { width: 76px; text-align: right; padding: 8px 10px; }
+  .stock-row { gap: 6px; }
+  .stock-row input[type="number"] { width: 56px; text-align: center; padding: 8px 4px; -moz-appearance: textfield; }
+  .stock-row input[type="number"]::-webkit-outer-spin-button,
+  .stock-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stock-row .stock-step {
+    width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); font-size: 22px; line-height: 1; font-weight: 600;
+    cursor: pointer; padding: 0; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  .stock-row .stock-step:active { background: var(--line); }
   .stock-row .stock-unit { width: 26px; font-size: 12.5px; color: var(--ink-faint); }
   .stock-row .stock-remove {
     background: none; border: none; color: var(--ink-faint); font-size: 20px; line-height: 1;
-    cursor: pointer; padding: 6px 8px; border-radius: 8px;
+    cursor: pointer; padding: 6px 4px; border-radius: 8px;
   }
   .stock-row .stock-remove:hover { color: var(--danger); }
   .add-stock-form { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 18px; }
@@ -479,7 +488,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   <!-- ===================== TAB: EVENTOS ===================== -->
   <section class="tab" id="tab-inventario" hidden>
     <div class="section-title">Inventario</div>
-    <div class="section-hint">Cuenta lo que queda al acabar la noche. Vino y vermut en litros (admite decimales: 1,5). Deja en blanco lo que no hayas contado.</div>
+    <div class="section-hint">Cuenta lo que queda al acabar la noche. Usa − y + o escribe el número. Vino y vermut en litros (− y + van de medio en medio litro; admite decimales: 1,5). Deja en blanco lo que no hayas contado. Todo se guarda solo.</div>
     <div class="section-hint" id="stockPrevHint" style="margin-top:-8px;"></div>
     <div class="stack" id="stockList" style="margin-bottom:12px;"></div>
     <form id="formStockNuevo" class="add-stock-form">
@@ -560,15 +569,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="stack" id="pagosList" style="margin-bottom:10px;"></div>
     <button class="btn btn-secondary" type="button" id="btnAddPago" style="margin-bottom:18px;">Registrar pago parcial</button>
 
-    <div class="section-title">Cerrar la noche</div>
-    <div class="section-hint">Cierra esta caja para guardar el histórico completo (todas las noches) en un único Excel y empezar una caja nueva y vacía.</div>
-    <div class="stack" style="margin-bottom:22px;">
-      <button class="btn btn-primary" id="btnCloseNight">
-        <span id="btnCloseNightLabel">Cerrar caja</span>
-      </button>
-      <div class="section-hint history-note" id="driveHint" style="margin-top:-6px;">&nbsp;</div>
-    </div>
-
     <div class="section-title">Excel en Google Drive</div>
     <div class="section-hint">Se guarda solo después de cada cambio, con todas las noches, siempre en el mismo archivo. Arriba ves si está al día.</div>
     <div class="stack" style="margin-bottom:22px;" id="driveSection">
@@ -576,8 +576,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="section-hint history-note" id="driveCopyHint" style="margin-top:-6px;">&nbsp;</div>
     </div>
 
+    <div class="section-title">Noche nueva</div>
+    <div class="section-hint">No hay que cerrar nada: todo queda guardado solo. Cuando empiece otra noche, pulsa aquí para abrir una caja vacía; la de hoy queda en Eventos y en el Excel.</div>
+    <button class="btn btn-secondary" id="btnCloseNight" style="width:100%;margin-bottom:22px;">Empezar noche nueva</button>
+
     <div class="section-title">Copia de seguridad</div>
-    <div class="section-hint">Descarga en cualquier momento el histórico de todas las noches hasta ahora, sin cerrar ni reiniciar nada.</div>
+    <div class="section-hint">Descarga en cualquier momento el histórico de todas las noches hasta ahora.</div>
     <button class="btn btn-secondary" id="btnExport">
       <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
       Descargar Excel
@@ -620,11 +624,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 <div class="sheet-backdrop" id="closeBackdrop" hidden>
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">¿Cerrar la caja de esta noche?</div>
+    <div class="sheet-title">¿Empezar una noche nueva?</div>
     <p class="section-hint" id="closeSummary" style="margin-bottom:18px;"></p>
     <div class="stack">
       <button class="btn btn-primary" id="btnConfirmClose">
-        <span id="btnConfirmCloseLabel">Sí, cerrar caja</span>
+        <span id="btnConfirmCloseLabel">Sí, empezar noche nueva</span>
       </button>
       <button class="btn btn-ghost" id="btnCancelClose" style="width:100%;">Cancelar</button>
     </div>
@@ -761,7 +765,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="stack" id="eventoDetalleIngresosList" style="margin-bottom:16px;"></div>
 
     <div class="section-title" style="font-size:15px;" id="eventoDetalleStockTitle" hidden>Inventario</div>
-    <div class="section-hint" style="margin-top:-8px;">Puedes corregir el inventario de esta noche si os equivocasteis al cerrar.</div>
+    <div class="section-hint" style="margin-top:-8px;">Puedes corregir el inventario de esta noche con − y +, o escribiendo el número. Se guarda solo.</div>
     <div class="stack" id="eventoDetalleStockList" style="margin-bottom:12px;"></div>
     <form id="formEventoDetalleStockNuevo" class="add-stock-form" style="margin-bottom:16px;">
       <div class="field">
@@ -928,7 +932,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v28-web";
+  const BUILD_VERSION = "v29-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1517,20 +1521,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------------------------------------------------------------------
   async function checkDriveConnection() {
     driveReady = !!mcp;
-    $("driveHint").textContent = driveReady
-      ? "Al cerrar, el histórico completo se guarda en Google Drive, siempre en el mismo archivo (mismo enlace)."
-      : "";
     $("driveCopyHint").textContent = driveReady
       ? "Guardado automático activado."
       : "";
-    updateCloseButtonLabel();
     renderDiag();
   }
-  function updateCloseButtonLabel() {
-    $("btnCloseNightLabel").textContent = driveReady ? "Cerrar caja y guardar en Drive" : "Cerrar caja (descarga Excel)";
-  }
-
-  // ---------------------------------------------------------------------
   // Cached "Abrir Google Drive" link — shown as soon as we know it,
   // refreshed after every successful copy/close so it never points at a
   // trashed file.
@@ -2159,28 +2154,93 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return;
     }
     const prevMap = new Map(previousStockFinal.filter((s) => s.nombre).map((s) => [stockKey(s.nombre), s]));
-    list.innerHTML = eventInfo.stockFinal.map((item, idx) => {
+    const html = eventInfo.stockFinal.map((item, idx) => {
       const prev = prevMap.get(stockKey(item.nombre));
       const prevHint = prev && prev.cantidad != null ? `<div class="stock-prev">Antes: ${esc(fmtCantidad(prev.cantidad, prev.unidad))}</div>` : "";
       const isL = item.unidad === "L";
       return `
       <div class="stock-row" data-idx="${idx}">
         <div class="stock-name">${esc(item.nombre)}${prevHint}</div>
+        <button type="button" class="stock-step" data-step="-1" aria-label="Menos ${esc(item.nombre)}">−</button>
         <input type="number" inputmode="${isL ? "decimal" : "numeric"}" min="0" step="${isL ? "0.1" : "1"}" placeholder="0" value="${item.cantidad != null ? item.cantidad : ""}" aria-label="${esc(item.nombre)} (${isL ? "litros" : "unidades"})">
+        <button type="button" class="stock-step" data-step="1" aria-label="Más ${esc(item.nombre)}">+</button>
         <span class="stock-unit">${isL ? "L" : "uds"}</span>
         <button type="button" class="stock-remove" aria-label="Quitar ${esc(item.nombre)}">✕</button>
       </div>`;
     }).join("");
+    // v29: while a count is being typed, never rebuild the list under the
+    // finger (the field would lose focus and the keyboard would close).
+    // Same products -> only refresh the OTHER fields' numbers in place.
+    const rows = list.querySelectorAll(".stock-row");
+    const typing = document.activeElement && document.activeElement.tagName === "INPUT" && list.contains(document.activeElement);
+    const sameRows = rows.length === eventInfo.stockFinal.length &&
+      eventInfo.stockFinal.every((item, i) => rows[i].dataset.nombre === stockKey(item.nombre) + "|" + item.unidad);
+    if (typing && sameRows) {
+      eventInfo.stockFinal.forEach((item, i) => {
+        const inp = rows[i].querySelector("input");
+        if (inp !== document.activeElement) inp.value = item.cantidad != null ? item.cantidad : "";
+      });
+      return;
+    }
+    list.__html = null; // force: the DOM may have been patched in place above
+    list.innerHTML = html;
+    list.querySelectorAll(".stock-row").forEach((r, i) => {
+      const it = eventInfo.stockFinal[i];
+      r.dataset.nombre = stockKey(it.nombre) + "|" + it.unidad;
+    });
   }
+  // − / + : one unit at a time, half a litre for wine and vermut. Blank
+  // counts as 0. Shared by the Inventario tab and the event detail sheet.
+  function stepCantidad(actual, unidad, dir) {
+    const paso = unidad === "L" ? 0.5 : 1;
+    const base = actual == null || actual === "" ? 0 : Number(actual) || 0;
+    return parseCantidad(Math.max(0, base + dir * paso), unidad);
+  }
+  let stockTypingTimer = null;
+  function saveStockRowFromInput(inputEl) {
+    const row = inputEl.closest(".stock-row");
+    if (!row) return;
+    const idx = Number(row.dataset.idx);
+    const item = eventInfo.stockFinal[idx];
+    if (!item) return;
+    const cantidad = parseCantidad(inputEl.value, item.unidad);
+    if (cantidad === item.cantidad) return;
+    saveStockFinal(eventInfo.stockFinal.map((it, i) => i === idx ? { ...it, cantidad } : it));
+  }
+  // Saved while typing too (not only when leaving the field), so a count
+  // is never lost by switching tab or locking the phone mid-entry.
+  $("stockList").addEventListener("input", (e) => {
+    if (e.target.tagName !== "INPUT") return;
+    const el = e.target;
+    clearTimeout(stockTypingTimer);
+    stockTypingTimer = setTimeout(() => saveStockRowFromInput(el), 700);
+  });
   $("stockList").addEventListener("change", (e) => {
     const row = e.target.closest(".stock-row");
     if (!row || e.target.tagName !== "INPUT") return;
     const idx = Number(row.dataset.idx);
     const v = e.target.value;
-    const next = eventInfo.stockFinal.map((item, i) => i === idx ? { ...item, cantidad: parseCantidad(v, item.unidad) } : item);
+    clearTimeout(stockTypingTimer);
+    const nueva = parseCantidad(v, eventInfo.stockFinal[idx] && eventInfo.stockFinal[idx].unidad);
+    if (eventInfo.stockFinal[idx] && eventInfo.stockFinal[idx].cantidad === nueva) return;
+    const next = eventInfo.stockFinal.map((item, i) => i === idx ? { ...item, cantidad: nueva } : item);
     saveStockFinal(next);
   });
   $("stockList").addEventListener("click", (e) => {
+    const stepBtn = e.target.closest(".stock-step");
+    if (stepBtn) {
+      const row = stepBtn.closest(".stock-row");
+      const idx = Number(row.dataset.idx);
+      const item = eventInfo.stockFinal[idx];
+      if (!item) return;
+      clearTimeout(stockTypingTimer);
+      const inp = row.querySelector("input");
+      const actual = inp.value !== "" ? parseCantidad(inp.value, item.unidad) : item.cantidad;
+      const cantidad = stepCantidad(actual, item.unidad, Number(stepBtn.dataset.step));
+      inp.value = cantidad;
+      saveStockFinal(eventInfo.stockFinal.map((it, i) => i === idx ? { ...it, cantidad } : it));
+      return;
+    }
     const btn = e.target.closest(".stock-remove");
     if (!btn) return;
     const row = e.target.closest(".stock-row");
@@ -2714,7 +2774,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       ? stock.map((s, idx) => `
         <div class="stock-row" data-idx="${idx}">
           <div class="stock-name">${esc(s.nombre)}</div>
+          <button type="button" class="stock-step" data-step="-1" aria-label="Menos ${esc(s.nombre)}">−</button>
           <input type="number" inputmode="${s.unidad === "L" ? "decimal" : "numeric"}" min="0" step="${s.unidad === "L" ? "0.1" : "1"}" placeholder="0" value="${s.cantidad != null ? s.cantidad : ""}">
+          <button type="button" class="stock-step" data-step="1" aria-label="Más ${esc(s.nombre)}">+</button>
           <span class="stock-unit">${s.unidad === "L" ? "L" : "uds"}</span>
           <button type="button" class="stock-remove" aria-label="Quitar ${esc(s.nombre)}">✕</button>
         </div>`).join("")
@@ -2755,6 +2817,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     saveEventoDetalleStock(deletingEventoIdx, next);
   });
   $("eventoDetalleStockList").addEventListener("click", (e) => {
+    const stepBtn = e.target.closest(".stock-step");
+    if (stepBtn) {
+      if (deletingEventoIdx == null) return;
+      const ev0 = eventosCache[deletingEventoIdx];
+      const row0 = stepBtn.closest(".stock-row");
+      const i0 = Number(row0.dataset.idx);
+      const it0 = ev0 && (ev0.stockFinal || [])[i0];
+      if (!it0) return;
+      const inp = row0.querySelector("input");
+      const actual = inp.value !== "" ? parseCantidad(inp.value, it0.unidad) : it0.cantidad;
+      const cantidad = stepCantidad(actual, it0.unidad, Number(stepBtn.dataset.step));
+      inp.value = cantidad;
+      saveEventoDetalleStock(deletingEventoIdx, (ev0.stockFinal || []).map((it, i) => i === i0 ? { ...it, cantidad } : it));
+      return;
+    }
     const btn = e.target.closest(".stock-remove");
     if (!btn || deletingEventoIdx == null) return;
     const row = e.target.closest(".stock-row");
@@ -3116,76 +3193,47 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   // ---------------------------------------------------------------------
-  // Cerrar caja — confirm, then close + save history + start fresh night
+  // Noche nueva (v29: no "Cerrar caja"). Nothing has to be closed to be
+  // saved — every change already goes to Google and to the Drive Excel on
+  // its own. This only files tonight under Eventos and opens an empty one.
   // ---------------------------------------------------------------------
   $("btnCloseNight").addEventListener("click", () => {
-    if (!eventIsComplete()) { toast("Ponle nombre y fecha al evento antes de cerrar la caja."); focusEventFix(); return; }
+    if (!eventIsComplete()) { toast("Ponle nombre y fecha al evento antes de empezar otra noche."); focusEventFix(); return; }
     const nombre = eventInfo.nombre || "esta noche";
     $("closeSummary").textContent =
       `${nombre}: ${eur(totalIngresos())} de ingresos, ${eur(totalGastos())} de gastos, balance ${eur(balance())}. ` +
-      (driveReady
-        ? "Se guardará el histórico completo en Google Drive y empezarás una caja nueva y vacía."
-        : "Se descargará el histórico completo en Excel y empezarás una caja nueva y vacía.");
+      "Queda guardada en Eventos y en el Excel de Drive, y se abre una caja nueva y vacía.";
     $("closeBackdrop").hidden = false;
   });
   $("btnCancelClose").addEventListener("click", () => { $("closeBackdrop").hidden = true; });
   $("closeBackdrop").addEventListener("click", (e) => { if (e.target === $("closeBackdrop")) $("closeBackdrop").hidden = true; });
 
   $("btnConfirmClose").addEventListener("click", async () => {
-    if (!db || !currentEventId) { toast("No se puede cerrar sin conexión de datos."); return; }
+    if (!db || !currentEventId) { toast("No se puede empezar otra noche sin conexión de datos."); return; }
     const btn = $("btnConfirmClose");
     const label = $("btnConfirmCloseLabel");
     btn.disabled = true;
-    label.textContent = "Cerrando…";
+    label.textContent = "Abriendo…";
     try {
-      if (typeof XLSX === "undefined") {
-        label.textContent = "Cargando Excel…";
-        if (!(await waitForXLSX())) { toast("No se pudo cargar el motor de Excel. Comprueba tu conexión e inténtalo de nuevo."); return; }
-        label.textContent = "Cerrando…";
-      }
       await db.doc(`eventos/${currentEventId}`).update({ closedAt: new Date().toISOString() });
-
-      const [events, pagosGlobal] = await Promise.all([fetchAllEvents(), fetchAllPagos()]);
-      const buf = buildHistoryWorkbook(events, pagosGlobal);
-
-      let drivePushed = false;
-      if (driveReady && mcp) {
-        label.textContent = "Guardando en Drive…";
-        try {
-          await saveWorkbookToDrive(buf);
-          drivePushed = true;
-          await refreshDriveLink();
-        } catch (err) {
-          toast(driveErrorMessage(err));
-          logError("Guardar en Drive al cerrar", err);
-        }
-      }
-      if (!drivePushed && downloads) {
-        try {
-          await downloads.save({
-            filename: `Caja de Barra — histórico ${todayISO()}.xlsx`,
-            data: new Blob([buf], { type: "application/octet-stream" }),
-          });
-        } catch (e) { /* the night is already closed; the export button remains available */ }
-      }
-
       const newId = await createFreshEvent();
       await db.doc("app/state").set({ currentEventId: newId });
       switchToEvent(newId);
-      // The just-closed event's gastos now count as history, not "current
+      // The previous night's gastos now count as history, not "current
       // night" — refresh so "A quién se debe" keeps showing their debt.
       loadHistoricalData();
+      scheduleDriveSync(0);
 
       document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "gastos"));
       ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
 
       $("closeBackdrop").hidden = true;
-      toast(drivePushed ? "Caja cerrada y guardada en Drive." : "Caja cerrada. Excel descargado.");
+      toast("Noche nueva abierta. La anterior está en Eventos y en el Excel.");
     } catch (err) {
-      toastErr("No se pudo cerrar la caja", err);
+      toastErr("No se pudo empezar la noche nueva", err);
     } finally {
       btn.disabled = false;
-      label.textContent = "Sí, cerrar caja";
+      label.textContent = "Sí, empezar noche nueva";
     }
   });
 
