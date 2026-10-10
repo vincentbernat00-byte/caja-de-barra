@@ -382,6 +382,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .history-note a { color: var(--amber-ink); font-weight: 600; }
   /* v30 */
   .sheet-backdrop.over { z-index: 25; }
+  #hdrNombre { cursor: pointer; }
+  #hdrNombre::after { content: " ✎"; font-size: .6em; opacity: .6; vertical-align: middle; }
   .hdr-change {
     background: none; border: 1px solid currentColor; border-radius: 100px; color: inherit;
     font: inherit; font-size: 12px; font-weight: 600; padding: 3px 10px; margin-left: 4px;
@@ -406,7 +408,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div id="errBannerList"></div>
   </div>
   <div class="eyebrow">Caja de barra</div>
-  <div class="event-name" id="hdrNombre">Cargando…</div>
+  <div class="event-name" id="hdrNombre" role="button" tabindex="0" title="Toca para cambiar el nombre, la fecha o el local">Cargando…</div>
   <div class="event-sub"><span id="hdrSub">&nbsp;</span> <button type="button" class="hdr-change" id="btnHdrCambiar">Cambiar evento</button> <span id="saveChip" class="save-chip" hidden></span> <span id="excelChip" class="save-chip" hidden></span></div>
   <div class="balance-pill">
     <div>
@@ -663,6 +665,34 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           <span id="btnConfirmCloseLabel">Crear evento</span>
         </button>
         <button class="btn btn-ghost" type="button" id="btnCancelClose" style="width:100%;">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== SHEET: editar evento elegido (v31) ===================== -->
+<div class="sheet-backdrop over" id="editEventoBackdrop" hidden>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Editar evento</div>
+    <form id="formEditEvento">
+      <div class="field">
+        <label for="editEvNombre">Nombre del evento<span class="req"> *</span></label>
+        <input id="editEvNombre" type="text" required>
+      </div>
+      <div class="field-2col" style="margin-bottom:14px;">
+        <div class="field">
+          <label for="editEvFecha">Fecha<span class="req"> *</span></label>
+          <input id="editEvFecha" type="date" required>
+        </div>
+        <div class="field">
+          <label for="editEvLocal">Local</label>
+          <input id="editEvLocal" type="text" placeholder="Zebra">
+        </div>
+      </div>
+      <div class="stack">
+        <button class="btn btn-primary" type="submit">Guardar cambios</button>
+        <button class="btn btn-ghost" type="button" id="btnCancelEditEvento" style="width:100%;">Cancelar</button>
       </div>
     </form>
   </div>
@@ -1039,7 +1069,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v30-web";
+  const BUILD_VERSION = "v31-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1833,6 +1863,32 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   $("pickEventoBackdrop").addEventListener("click", (e) => { if (e.target === $("pickEventoBackdrop")) closePickEvento(); });
   $("btnPickNuevo").addEventListener("click", () => openNuevoEvento());
   $("btnHdrCambiar").addEventListener("click", () => openPickEvento());
+  // v31: tap the event name in the header to rename it (plus date / place).
+  function openEditEvento() {
+    if (!db || !currentEventId) { toast("No se puede editar sin conexión de datos."); return; }
+    $("editEvNombre").value = eventInfo.nombre || "";
+    $("editEvFecha").value = eventInfo.fecha || todayISO();
+    $("editEvLocal").value = eventInfo.local || "";
+    $("editEventoBackdrop").hidden = false;
+    setTimeout(() => { $("editEvNombre").focus(); $("editEvNombre").select(); }, 50);
+  }
+  $("hdrNombre").addEventListener("click", openEditEvento);
+  $("hdrNombre").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEditEvento(); } });
+  $("btnCancelEditEvento").addEventListener("click", () => { $("editEventoBackdrop").hidden = true; });
+  $("editEventoBackdrop").addEventListener("click", (e) => { if (e.target === $("editEventoBackdrop")) $("editEventoBackdrop").hidden = true; });
+  $("formEditEvento").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const nombre = $("editEvNombre").value.trim();
+    const fecha = $("editEvFecha").value;
+    const local = $("editEvLocal").value.trim();
+    if (!nombre) { toast("El nombre del evento es obligatorio."); return; }
+    if (!fecha) { toast("La fecha es obligatoria."); return; }
+    if (!db || !currentEventId) { toast("No se puede guardar sin conexión de datos."); return; }
+    eventInfo = { ...eventInfo, nombre, fecha, local };
+    db.doc(`eventos/${currentEventId}`).update({ nombre, fecha, local }).catch((err) => toastErr("No se pudo guardar el evento", err));
+    $("editEventoBackdrop").hidden = true;
+    toast("Evento actualizado.");
+  });
   $("btnCambiarEvento").addEventListener("click", () => openPickEvento());
   $("btnNuevoEvento").addEventListener("click", () => openNuevoEvento());
 
