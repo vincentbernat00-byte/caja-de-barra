@@ -465,14 +465,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="row2">
         <div class="field">
           <label for="gastoComprador">Compró<span class="req"> *</span></label>
-          <input id="gastoComprador" type="text" placeholder="Ej. Vincent" required>
+          <select id="gastoComprador" required><option value="" disabled selected>Elegir…</option><option value="Ana">Ana</option><option value="Merli">Merli</option><option value="Vincent">Vincent</option></select>
         </div>
         <div class="field">
           <label for="gastoImporte">Importe (€)</label>
           <input id="gastoImporte" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" required>
         </div>
       </div>
-      <div class="chips" data-chips-for="gastoComprador"><button type="button" class="chip" data-nombre="Vincent">Vincent</button><button type="button" class="chip" data-nombre="Ana">Ana</button><button type="button" class="chip" data-nombre="Merli">Merli</button></div>
       <div class="field" style="margin-bottom:14px;">
         <label for="gastoObs">Observaciones (opcional)</label>
         <textarea id="gastoObs" rows="2" placeholder="Ej. faltaba hielo, se compró en dos tandas…"></textarea>
@@ -788,14 +787,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="row2">
         <div class="field">
           <label for="editGastoComprador">Compró<span class="req"> *</span></label>
-          <input id="editGastoComprador" type="text" required>
+          <select id="editGastoComprador" required><option value="" disabled selected>Elegir…</option><option value="Ana">Ana</option><option value="Merli">Merli</option><option value="Vincent">Vincent</option></select>
         </div>
         <div class="field">
           <label for="editGastoImporte">Importe (€)</label>
           <input id="editGastoImporte" type="number" inputmode="decimal" step="0.01" min="0" required>
         </div>
       </div>
-      <div class="chips" data-chips-for="editGastoComprador"><button type="button" class="chip" data-nombre="Vincent">Vincent</button><button type="button" class="chip" data-nombre="Ana">Ana</button><button type="button" class="chip" data-nombre="Merli">Merli</button></div>
       <div class="field" style="margin-bottom:14px;">
         <label for="editGastoObs">Observaciones (opcional)</label>
         <textarea id="editGastoObs" rows="2"></textarea>
@@ -1110,7 +1108,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v32-web";
+  const BUILD_VERSION = "v33-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -2164,7 +2162,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             <div class="li-title">${esc(g.proveedor) || "Gasto"}</div>
             <div class="li-sub">
               <span>${esc(fmtDate(g.fecha))}</span>
-              ${g.comprador ? `<span>· Compró: ${esc(g.comprador)}</span>` : ""}
+              ${g.comprador ? `<span>· Compró: ${esc(personaKey(g.comprador))}</span>` : ""}
               ${(() => { const st = estadosGasto.get(`${currentEventId}/${g.id}`); const e2 = g.pagado ? "marcado" : (st ? st.estado : "pendiente");
                 return e2 === "marcado" ? '<span class="pill pill-paid">Pagado</span>'
                   : e2 === "reembolsado" ? '<span class="pill pill-paid">Reembolsado</span>'
@@ -2193,10 +2191,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // The bar team. They always appear in "Personas" (even at 0 €) and any
   // spelling of their name ("vincent", " ANA ") is counted as the same person.
   const PERSONAS_FIJAS = ["Vincent", "Ana", "Merli"];
+  const PERSONAS_ALIAS = { anna: "Ana" }; // other spellings of the same person
   const personaKey = (s) => {
     const t = (s || "").trim();
     if (!t) return "Sin especificar";
     const k = slugify(t);
+    if (PERSONAS_ALIAS[k]) return PERSONAS_ALIAS[k];
     return PERSONAS_FIJAS.find((n) => slugify(n) === k) || t;
   };
   function evLabel(info) {
@@ -2836,7 +2836,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $("editGastoFecha").value = g.fecha || todayISO();
     fillEventoSelect($("editGastoEvento"), editingGastoEv);
     $("editGastoSuper").value = g.proveedor || "";
-    $("editGastoComprador").value = g.comprador || "";
+    {
+      // Only Ana / Merli / Vincent can be chosen; an old gasto bought by
+      // someone else keeps its name as an extra option until it is changed.
+      const sel = $("editGastoComprador");
+      sel.querySelectorAll("option[data-extra]").forEach((o) => o.remove());
+      const quien = g.comprador ? personaKey(g.comprador) : "";
+      if (quien && !PERSONAS_FIJAS.includes(quien)) {
+        const o = document.createElement("option");
+        o.value = quien; o.textContent = quien; o.dataset.extra = "1";
+        sel.appendChild(o);
+      }
+      sel.value = quien;
+    }
     syncChips();
     $("editGastoObs").value = g.observaciones || "";
     $("editGastoImporte").value = g.importe != null ? g.importe : "";
@@ -3287,7 +3299,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           <div class="list-item clickable" data-gid="${esc((g._key || "").split("/")[1] || "")}" role="button" tabindex="0">
             <div class="li-main">
               <div class="li-title">${esc(g.proveedor) || "(sin proveedor)"}</div>
-              <div class="li-sub"><span>${esc(fmtDate(g.fecha))}</span>${g.comprador ? `<span>· ${esc(g.comprador)}</span>` : ""}${g.pagado ? `<span>· Pagado</span>` : ""}</div>
+              <div class="li-sub"><span>${esc(fmtDate(g.fecha))}</span>${g.comprador ? `<span>· ${esc(personaKey(g.comprador))}</span>` : ""}${g.pagado ? `<span>· Pagado</span>` : ""}</div>
             </div>
             <div class="li-amount" style="color:var(--expense)">− ${eur(g.importe)}</div>
             ${chevronSVG}
