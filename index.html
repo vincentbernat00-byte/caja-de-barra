@@ -380,6 +380,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   .history-note { font-size: 12.5px; color: var(--ink-soft); }
   .history-note a { color: var(--amber-ink); font-weight: 600; }
+  /* v30 */
+  .sheet-backdrop.over { z-index: 25; }
+  .hdr-change {
+    background: none; border: 1px solid currentColor; border-radius: 100px; color: inherit;
+    font: inherit; font-size: 12px; font-weight: 600; padding: 3px 10px; margin-left: 4px;
+    opacity: .85; cursor: pointer; vertical-align: middle;
+  }
+  .stock-row .stock-name { cursor: pointer; }
+  .stock-row .stock-name .edit-mark { color: var(--ink-faint); font-weight: 400; font-size: 12.5px; }
+  .pick-item.sel { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber) inset; }
+  .ev-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .ev-btns .btn { padding-left: 8px; padding-right: 8px; }
+  select { width: 100%; }
 </style>
 
 <header class="top">
@@ -394,10 +407,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   </div>
   <div class="eyebrow">Caja de barra</div>
   <div class="event-name" id="hdrNombre">Cargando…</div>
-  <div class="event-sub"><span id="hdrSub">&nbsp;</span> <span id="saveChip" class="save-chip" hidden></span> <span id="excelChip" class="save-chip" hidden></span></div>
+  <div class="event-sub"><span id="hdrSub">&nbsp;</span> <button type="button" class="hdr-change" id="btnHdrCambiar">Cambiar evento</button> <span id="saveChip" class="save-chip" hidden></span> <span id="excelChip" class="save-chip" hidden></span></div>
   <div class="balance-pill">
     <div>
-      <div class="label">Balance de esta noche</div>
+      <div class="label">Balance de este evento</div>
     </div>
     <div class="value mono" id="hdrBalance">0,00 €</div>
   </div>
@@ -408,14 +421,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   <!-- ===================== TAB: GASTOS ===================== -->
   <section class="tab" id="tab-gastos">
     <div class="section-title">Compras y gastos</div>
-    <div class="section-hint">Añade cada compra al salir de la tienda. La fecha es la de hoy.</div>
+    <div class="section-hint">Añade cada compra al salir de la tienda. Se apunta en el evento elegido, con la fecha de hoy. Toca un gasto para cambiar cualquier dato (también la fecha o el evento).</div>
 
     <div class="card" style="margin-bottom:14px;" id="gastosEventoCard">
       <div class="field" style="margin-bottom:0;">
-        <label for="evNombreGastos">Nombre del evento<span class="req"> *</span></label>
+        <label for="evNombreGastos">Evento elegido<span class="req"> *</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;">(aquí puedes cambiarle el nombre)</span></label>
         <input id="evNombreGastos" type="text" placeholder="Ej. Expo Foto Zebra" required>
       </div>
-      <div class="section-hint" style="margin-top:6px;margin-bottom:0;">Se usa también para los ingresos y para "Eventos" — no hace falta repetirlo.</div>
+      <div class="ev-btns">
+        <button class="btn btn-secondary" type="button" id="btnCambiarEvento">Cambiar de evento</button>
+        <button class="btn btn-secondary" type="button" id="btnNuevoEvento">＋ Evento nuevo</button>
+      </div>
+      <div class="section-hint" style="margin-top:8px;margin-bottom:0;">Los gastos, ingresos e inventario que apuntes van a este evento.</div>
     </div>
 
     <form id="formGasto" class="card" style="margin-bottom:18px;">
@@ -441,7 +458,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     </form>
 
     <div id="gastosTotalRow" class="card" style="margin-bottom:14px;">
-      <div class="subtotal-row"><span class="k">Total gastado esta noche</span><span class="v" id="totalGastos">0,00 €</span></div>
+      <div class="subtotal-row"><span class="k">Total gastado en este evento</span><span class="v" id="totalGastos">0,00 €</span></div>
     </div>
 
     <div class="stack" id="gastosList"></div>
@@ -449,8 +466,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   <!-- ===================== TAB: INGRESOS ===================== -->
   <section class="tab" id="tab-ingresos" hidden>
-    <div class="section-title">Ingresos de esta noche</div>
-    <div class="section-hint">Anota lo cobrado por Bizum, tarjeta y efectivo. Puedes ir añadiendo varias entradas durante la noche.</div>
+    <div class="section-title">Ingresos de este evento</div>
+    <div class="section-hint">Anota lo cobrado por Bizum, tarjeta y efectivo. Puedes ir añadiendo varias entradas durante la noche. Toca un ingreso para cambiar cualquier dato.</div>
 
     <form id="formIngreso" class="card" style="margin-bottom:18px;">
       <div class="field">
@@ -502,12 +519,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       </div>
       <button class="btn btn-secondary" type="submit">Añadir</button>
     </form>
-    <div class="section-hint">Para quitar un producto de la lista pulsa ✕. Para cambiarle el nombre, quítalo y añádelo con el nombre nuevo. La lista se copia a la noche siguiente.</div>
+    <div class="section-hint">Toca el nombre de un producto para cambiarle el nombre o la unidad. Para quitarlo de la lista pulsa ✕. La lista se copia al evento siguiente.</div>
   </section>
 
   <section class="tab" id="tab-eventos" hidden>
     <div class="section-title">Eventos</div>
-    <div class="section-hint">Todas las noches, por fecha — qué se compró, qué entró, y cuándo. Toca una para ver el detalle.</div>
+    <div class="section-hint">Todos los eventos, por fecha. Toca uno para verlo y modificar lo que quieras: nombre, fecha, local, gastos, ingresos e inventario.</div>
 
     <div class="stack" id="eventosList" style="margin-bottom:12px;"></div>
     <button class="btn btn-ghost" type="button" id="btnRefreshEventos">
@@ -552,7 +569,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="subtotal-row" style="font-size:16px;"><span class="k">Balance general</span><span class="v mono" id="genBalance">0,00 €</span></div>
     </div>
 
-    <div class="section-title">Esta noche</div>
+    <div class="section-title">Este evento</div>
     <div class="card" style="margin-bottom:18px;">
       <div class="subtotal-row"><span class="k">Total ingresos</span><span class="v" id="resIngresos">0,00 €</span></div>
       <div class="subtotal-row"><span class="k">Total gastos</span><span class="v" id="resGastos">0,00 €</span></div>
@@ -576,9 +593,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="section-hint history-note" id="driveCopyHint" style="margin-top:-6px;">&nbsp;</div>
     </div>
 
-    <div class="section-title">Noche nueva</div>
-    <div class="section-hint">No hay que cerrar nada: todo queda guardado solo. Cuando empiece otra noche, pulsa aquí para abrir una caja vacía; la de hoy queda en Eventos y en el Excel.</div>
-    <button class="btn btn-secondary" id="btnCloseNight" style="width:100%;margin-bottom:22px;">Empezar noche nueva</button>
+    <div class="section-title">Evento nuevo</div>
+    <div class="section-hint">No hay que cerrar nada: todo queda guardado solo. Para otro evento, créalo aquí; los anteriores siguen en Eventos y se pueden volver a elegir y modificar cuando quieras.</div>
+    <button class="btn btn-secondary" id="btnCloseNight" style="width:100%;margin-bottom:22px;">Crear evento nuevo</button>
 
     <div class="section-title">Copia de seguridad</div>
     <div class="section-hint">Descarga en cualquier momento el histórico de todas las noches hasta ahora.</div>
@@ -621,22 +638,75 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 </nav>
 
 <!-- ===================== SHEET: confirm closing the night ===================== -->
-<div class="sheet-backdrop" id="closeBackdrop" hidden>
+<div class="sheet-backdrop over" id="closeBackdrop" hidden>
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">¿Empezar una noche nueva?</div>
-    <p class="section-hint" id="closeSummary" style="margin-bottom:18px;"></p>
+    <div class="sheet-title">Crear evento nuevo</div>
+    <p class="section-hint" id="closeSummary" style="margin-bottom:14px;">Empieza con la caja vacía. Los demás eventos no se tocan.</p>
+    <form id="formNuevoEvento">
+      <div class="field">
+        <label for="nuevoEvNombre">Nombre del evento<span class="req"> *</span></label>
+        <input id="nuevoEvNombre" type="text" placeholder="Ej. Expo Foto Zebra" required>
+      </div>
+      <div class="field-2col" style="margin-bottom:14px;">
+        <div class="field">
+          <label for="nuevoEvFecha">Fecha<span class="req"> *</span></label>
+          <input id="nuevoEvFecha" type="date" required>
+        </div>
+        <div class="field">
+          <label for="nuevoEvLocal">Local</label>
+          <input id="nuevoEvLocal" type="text" placeholder="Zebra">
+        </div>
+      </div>
+      <div class="stack">
+        <button class="btn btn-primary" type="submit" id="btnConfirmClose">
+          <span id="btnConfirmCloseLabel">Crear evento</span>
+        </button>
+        <button class="btn btn-ghost" type="button" id="btnCancelClose" style="width:100%;">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== SHEET: elegir evento ===================== -->
+<div class="sheet-backdrop over" id="pickEventoBackdrop" hidden>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">¿Para qué evento?</div>
+    <p class="section-hint" style="margin-top:-6px;margin-bottom:14px;">Elige el evento al que vas a apuntar gastos, ingresos e inventario.</p>
+    <div class="stack" id="pickEventoList" style="margin-bottom:12px;"></div>
     <div class="stack">
-      <button class="btn btn-primary" id="btnConfirmClose">
-        <span id="btnConfirmCloseLabel">Sí, empezar noche nueva</span>
-      </button>
-      <button class="btn btn-ghost" id="btnCancelClose" style="width:100%;">Cancelar</button>
+      <button class="btn btn-secondary" type="button" id="btnPickNuevo">＋ Crear evento nuevo</button>
+      <button class="btn btn-ghost" type="button" id="btnPickCerrar" style="width:100%;">Cerrar</button>
     </div>
   </div>
 </div>
 
+<!-- ===================== SHEET: editar producto del inventario ===================== -->
+<div class="sheet-backdrop over" id="editStockBackdrop" hidden>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Editar producto</div>
+    <form id="formEditStock">
+      <div class="field">
+        <label for="editStockNombre">Nombre<span class="req"> *</span></label>
+        <input id="editStockNombre" type="text" required>
+      </div>
+      <div class="field" style="margin-bottom:16px;">
+        <label for="editStockUnidad">Unidad</label>
+        <select id="editStockUnidad"><option value="uds">Unidades (uds)</option><option value="L">Litros (L)</option></select>
+      </div>
+      <div class="stack">
+        <button class="btn btn-primary" type="submit">Guardar cambios</button>
+        <button class="btn btn-danger" type="button" id="btnDeleteStock">Quitar producto</button>
+        <button class="btn btn-ghost" type="button" id="btnCancelEditStock" style="width:100%;">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ===================== SHEET: edit/delete gasto ===================== -->
-<div class="sheet-backdrop" id="editGastoBackdrop" hidden>
+<div class="sheet-backdrop over" id="editGastoBackdrop" hidden>
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title">Editar gasto</div>
@@ -659,6 +729,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <label for="editGastoObs">Observaciones (opcional)</label>
         <textarea id="editGastoObs" rows="2"></textarea>
       </div>
+      <div class="row2">
+        <div class="field">
+          <label for="editGastoFecha">Fecha</label>
+          <input id="editGastoFecha" type="date">
+        </div>
+        <div class="field">
+          <label for="editGastoEvento">Evento</label>
+          <select id="editGastoEvento"></select>
+        </div>
+      </div>
       <div class="field" style="margin-bottom:16px;">
         <label>Reembolso</label>
         <div class="segmented" id="editGastoPagadoToggle">
@@ -676,7 +756,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 </div>
 
 <!-- ===================== SHEET: registrar pago ===================== -->
-<div class="sheet-backdrop" id="addPagoBackdrop" hidden>
+<div class="sheet-backdrop over" id="addPagoBackdrop" hidden>
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title" id="pagoSheetTitle">Registrar pago realizado</div>
@@ -714,7 +794,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 </div>
 
 <!-- ===================== SHEET: edit/delete ingreso ===================== -->
-<div class="sheet-backdrop" id="editIngresoBackdrop" hidden>
+<div class="sheet-backdrop over" id="editIngresoBackdrop" hidden>
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title">Editar ingreso</div>
@@ -737,6 +817,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           <input id="editIngEfectivo" type="number" inputmode="decimal" step="0.01" min="0">
         </div>
       </div>
+      <div class="row2">
+        <div class="field">
+          <label for="editIngFecha">Fecha</label>
+          <input id="editIngFecha" type="date">
+        </div>
+        <div class="field">
+          <label for="editIngEvento">Evento</label>
+          <select id="editIngEvento"></select>
+        </div>
+      </div>
       <div class="stack">
         <button class="btn btn-primary" type="submit">Guardar cambios</button>
         <button class="btn btn-danger" type="button" id="btnDeleteIngreso">Eliminar ingreso</button>
@@ -753,19 +843,36 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="sheet-title" id="eventoDetalleTitulo">Evento</div>
     <div class="section-hint" id="eventoDetalleSub" style="margin-top:-8px;margin-bottom:14px;">&nbsp;</div>
 
+    <div class="field">
+      <label for="detEvNombre">Nombre del evento<span class="req"> *</span></label>
+      <input id="detEvNombre" type="text">
+    </div>
+    <div class="field-2col">
+      <div class="field">
+        <label for="detEvFecha">Fecha<span class="req"> *</span></label>
+        <input id="detEvFecha" type="date">
+      </div>
+      <div class="field">
+        <label for="detEvLocal">Local</label>
+        <input id="detEvLocal" type="text" placeholder="Zebra">
+      </div>
+    </div>
+    <button class="btn btn-primary" type="button" id="btnUsarEvento" style="width:100%;margin-bottom:16px;">Elegir este evento para apuntar</button>
+
     <div class="subtotal-row"><span class="k">Total gastos</span><span class="v" id="eventoDetalleGastosTotal">0,00 €</span></div>
     <div class="subtotal-row"><span class="k">Total ingresos</span><span class="v" id="eventoDetalleIngresosTotal">0,00 €</span></div>
     <hr class="rule">
     <div class="subtotal-row" style="font-size:16px;margin-bottom:16px;"><span class="k">Balance</span><span class="v mono" id="eventoDetalleBalance">0,00 €</span></div>
 
     <div class="section-title" style="font-size:15px;">Compras y gastos</div>
+    <div class="section-hint" style="margin-top:-2px;">Toca un gasto o un ingreso para modificarlo, borrarlo o pasarlo a otro evento.</div>
     <div class="stack" id="eventoDetalleGastosList" style="margin-bottom:16px;"></div>
 
     <div class="section-title" style="font-size:15px;">Ingresos</div>
     <div class="stack" id="eventoDetalleIngresosList" style="margin-bottom:16px;"></div>
 
     <div class="section-title" style="font-size:15px;" id="eventoDetalleStockTitle" hidden>Inventario</div>
-    <div class="section-hint" style="margin-top:-8px;">Puedes corregir el inventario de esta noche con − y +, o escribiendo el número. Se guarda solo.</div>
+    <div class="section-hint" style="margin-top:-2px;">Corrige el inventario de este evento con − y +, o escribiendo el número. Toca el nombre de un producto para cambiarlo. Se guarda solo.</div>
     <div class="stack" id="eventoDetalleStockList" style="margin-bottom:12px;"></div>
     <form id="formEventoDetalleStockNuevo" class="add-stock-form" style="margin-bottom:16px;">
       <div class="field">
@@ -932,7 +1039,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v29-web";
+  const BUILD_VERSION = "v30-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1008,6 +1115,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   let historicalIngresos = []; // ingresos from every CLOSED/past event, same idea — used for the general (all-time) summary
   let unsubEvento = null, unsubGastos = null, unsubIngresos = null, unsubPagos = null;
   let editingGastoId = null, editingIngresoId = null;
+  // v30: a gasto / ingreso can be edited from any event (Eventos > detalle),
+  // so the sheet remembers which event the entry belongs to.
+  let editingGastoEv = null, editingIngresoEv = null;
   let editingGastoPagado = false;
   // Recent save/load failures, newest first — kept visible in the sticky
   // err-banner (see logError below) instead of only flashing in a toast
@@ -1482,6 +1592,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (db) {
       try {
         await ensureCurrentEvent();
+        // v30: each phone works on the event IT chose (remembered on the
+        // phone); the shared app/state only says which one is the newest.
+        currentEventId = await resolveChosenEvent(currentEventId);
         switchToEvent(currentEventId);
         loadCachedDriveLink();
         loadHistoricalData();
@@ -1495,8 +1608,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           changeTimer = setTimeout(() => {
             loadHistoricalData();
             if (!$("tab-eventos").hidden) loadEventos();
+            if (!$("pickEventoBackdrop").hidden) renderPickEvento();
+            checkCurrentEventExists();
           }, 60);
         });
+        // v30: on opening, ask which event the entries are for.
+        maybeAskEvento();
         // Every change made on this phone is pushed to the Drive Excel on
         // its own, once edits pause — no button needed.
         db.onLocalWrite(() => scheduleDriveSync(DRIVE_SYNC_DEBOUNCE_MS));
@@ -1596,9 +1713,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return DEFAULT_STOCK.map((x) => ({ ...x }));
   }
 
-  async function createFreshEvent() {
+  async function createFreshEvent(fields) {
     const stockFinal = await getSeedStockFinal();
-    const ref = await db.collection("eventos").add({
+    const ref = await db.collection("eventos").add(Object.assign({
       nombre: "",
       fecha: todayISO(),
       local: "Zebra",
@@ -1606,8 +1723,126 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       closedAt: null,
       stockFinal,
       inventarioV2: true,
-    });
+    }, fields || {}));
     return ref.id;
+  }
+
+  // ---------------------------------------------------------------------
+  // v30 — Choosing the event. Every event stays open for good: any phone
+  // can pick any of them (at opening, from the header, or from Eventos)
+  // and whatever it enters goes to that one. The choice is remembered on
+  // the phone, so two people can work on two different events at once.
+  // ---------------------------------------------------------------------
+  const CHOSEN_KEY = "cajaBarra.eventoElegido.v1";
+  const ASKED_KEY = "cajaBarra.eventoPreguntado.v1";
+  function rememberChosen(id) { try { localStorage.setItem(CHOSEN_KEY, id); } catch (e) { /* private mode */ } }
+  function getChosen() { try { return localStorage.getItem(CHOSEN_KEY); } catch (e) { return null; } }
+  function markAsked() { try { sessionStorage.setItem(ASKED_KEY, "1"); } catch (e) { /* ignore */ } }
+  function wasAsked() { try { return !!sessionStorage.getItem(ASKED_KEY); } catch (e) { return false; } }
+  function goTab(name) {
+    document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+    ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
+    if (name === "eventos") loadEventos();
+  }
+  // Every event, most recent first (by date, then creation).
+  async function listEventosBasic() {
+    const qs = await db.collection("eventos").get();
+    return qs.docs.map((d) => ({ ...d.data(), id: d.id }))
+      .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || "") || (b.createdAt || "").localeCompare(a.createdAt || ""));
+  }
+  async function resolveChosenEvent(fallbackId) {
+    const evs = await listEventosBasic();
+    if (!evs.length) {
+      const id = await createFreshEvent();
+      await db.doc("app/state").set({ currentEventId: id });
+      return id;
+    }
+    const chosen = getChosen();
+    if (chosen && evs.some((e) => e.id === chosen)) return chosen;
+    if (fallbackId && evs.some((e) => e.id === fallbackId)) return fallbackId;
+    return evs[0].id;
+  }
+  function selectEvento(id) {
+    rememberChosen(id);
+    markAsked();
+    if (id === currentEventId) return;
+    switchToEvent(id);
+    loadHistoricalData();
+    if (!$("tab-eventos").hidden) loadEventos();
+  }
+  // The event this phone is on was deleted from another phone: move to
+  // one that exists instead of writing into nothing.
+  let checkingEvent = false;
+  async function checkCurrentEventExists() {
+    if (checkingEvent || !db || !currentEventId) return;
+    checkingEvent = true;
+    try {
+      const snap = await db.doc(`eventos/${currentEventId}`).get();
+      if (snap.exists) return;
+      const id = await resolveChosenEvent(null);
+      if (id === currentEventId) return;
+      switchToEvent(id);
+      rememberChosen(id);
+      loadHistoricalData();
+      toast("El evento en el que estabas se ha eliminado. Elige otro.");
+      openPickEvento();
+    } catch (e) { /* next change retries */ }
+    finally { checkingEvent = false; }
+  }
+  async function renderPickEvento() {
+    const list = $("pickEventoList");
+    let evs = [];
+    try { evs = await listEventosBasic(); } catch (e) { logError("Cargar eventos", e); }
+    list.innerHTML = evs.length ? evs.map((ev) => `
+      <div class="list-item clickable pick-item${ev.id === currentEventId ? " sel" : ""}" data-id="${esc(ev.id)}" role="button" tabindex="0">
+        <div class="thumb-placeholder"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg></div>
+        <div class="li-main">
+          <div class="li-title">${esc((ev.nombre || "").trim()) || "(sin nombre)"}</div>
+          <div class="li-sub"><span>${esc(fmtDate(ev.fecha))}</span>${ev.local ? `<span>· ${esc(ev.local)}</span>` : ""}${ev.id === currentEventId ? '<span class="pill pill-paid">Elegido</span>' : ""}</div>
+        </div>
+        ${chevronSVG}
+      </div>`).join("") : '<div class="empty">Todavía no hay eventos. Crea el primero.</div>';
+    const actual = evs.find((e) => e.id === currentEventId);
+    $("btnPickCerrar").textContent = actual && (actual.nombre || "").trim() ? `Seguir con «${actual.nombre.trim()}»` : "Cerrar";
+  }
+  async function openPickEvento() {
+    if (!db) { toast("No se puede elegir evento sin conexión de datos."); return; }
+    await renderPickEvento();
+    $("pickEventoBackdrop").hidden = false;
+  }
+  function closePickEvento() { $("pickEventoBackdrop").hidden = true; markAsked(); }
+  function maybeAskEvento() { if (!wasAsked()) openPickEvento(); }
+  function pickFromRow(row) {
+    const id = row.dataset.id;
+    const nombre = row.querySelector(".li-title").textContent;
+    const cambia = id !== currentEventId;
+    selectEvento(id);
+    closePickEvento();
+    if (cambia) { goTab("gastos"); toast(`Evento elegido: ${nombre}.`); }
+  }
+  $("pickEventoList").addEventListener("click", (e) => {
+    const row = e.target.closest(".pick-item[data-id]");
+    if (row) pickFromRow(row);
+  });
+  $("pickEventoList").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const row = e.target.closest(".pick-item[data-id]");
+    if (row) { e.preventDefault(); pickFromRow(row); }
+  });
+  $("btnPickCerrar").addEventListener("click", closePickEvento);
+  $("pickEventoBackdrop").addEventListener("click", (e) => { if (e.target === $("pickEventoBackdrop")) closePickEvento(); });
+  $("btnPickNuevo").addEventListener("click", () => openNuevoEvento());
+  $("btnHdrCambiar").addEventListener("click", () => openPickEvento());
+  $("btnCambiarEvento").addEventListener("click", () => openPickEvento());
+  $("btnNuevoEvento").addEventListener("click", () => openNuevoEvento());
+
+  // <select> of every event, used by the gasto / ingreso edit sheets to
+  // move an entry that was put in the wrong event.
+  async function fillEventoSelect(sel, selectedId) {
+    let evs = [];
+    try { evs = await listEventosBasic(); } catch (e) { /* keep empty */ }
+    sel.innerHTML = evs.map((ev) => `<option value="${esc(ev.id)}">${esc(evLabel(ev))}${ev.fecha && (ev.nombre || "").trim() ? " · " + esc(fmtDate(ev.fecha)) : ""}</option>`).join("");
+    sel.value = selectedId;
   }
 
   // What did the last event actually count, so tonight's number can be read
@@ -1616,8 +1851,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   async function loadPreviousStock() {
     if (!db) return;
     try {
-      const qs = await db.collection("eventos").orderBy("createdAt", "desc").get();
-      const prevDoc = qs.docs.find((d) => d.id !== currentEventId);
+      const qs = await db.collection("eventos").get();
+      // v30: the event right BEFORE the chosen one (by date, then creation).
+      const orden = [...qs.docs].sort((a, b) => ((a.data().fecha || "").localeCompare(b.data().fecha || "")) || ((a.data().createdAt || "").localeCompare(b.data().createdAt || "")));
+      const pos = orden.findIndex((d) => d.id === currentEventId);
+      const prevDoc = pos > 0 ? orden[pos - 1] : null;
       if (prevDoc) {
         const info = prevDoc.data();
         previousStockFinal = normalizeStockFinal(info);
@@ -1987,12 +2225,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (pago) {
       pagoCtx = { mode: "edit", id: pago.id, persona: personaKey(pago.persona), overOk: false, tipo: pago.tipo || "pago", importeAntes: Number(pago.importe) || 0 };
       $("pagoPersona").value = pago.persona || "";
-      $("pagoPersona").readOnly = true;
       $("pagoImporte").value = (Number(pago.importe) || 0).toFixed(2);
       $("pagoFecha").value = pago.fecha || todayISO();
       $("pagoNota").value = pago.nota || "";
       $("pagoSheetTitle").textContent = `Editar pago a ${pago.persona || ""}`;
-      $("pagoPendHint").textContent = "Cambia la nota, la fecha o el importe. Lo pendiente se recalcula solo.";
+      $("pagoPendHint").textContent = "Cambia la persona, el importe, la fecha o la nota. Lo pendiente se recalcula solo.";
       $("pagoPendHint").hidden = false;
       $("pagoSubmit").textContent = "Guardar cambios";
     } else {
@@ -2160,7 +2397,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const isL = item.unidad === "L";
       return `
       <div class="stock-row" data-idx="${idx}">
-        <div class="stock-name">${esc(item.nombre)}${prevHint}</div>
+        <div class="stock-name" role="button" tabindex="0" title="Toca para cambiar el nombre o la unidad">${esc(item.nombre)} <span class="edit-mark">✎</span>${prevHint}</div>
         <button type="button" class="stock-step" data-step="-1" aria-label="Menos ${esc(item.nombre)}">−</button>
         <input type="number" inputmode="${isL ? "decimal" : "numeric"}" min="0" step="${isL ? "0.1" : "1"}" placeholder="0" value="${item.cantidad != null ? item.cantidad : ""}" aria-label="${esc(item.nombre)} (${isL ? "litros" : "unidades"})">
         <button type="button" class="stock-step" data-step="1" aria-label="Más ${esc(item.nombre)}">+</button>
@@ -2227,6 +2464,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     saveStockFinal(next);
   });
   $("stockList").addEventListener("click", (e) => {
+    const nameEl = e.target.closest(".stock-name");
+    if (nameEl) { openEditStock("actual", Number(nameEl.closest(".stock-row").dataset.idx)); return; }
     const stepBtn = e.target.closest(".stock-step");
     if (stepBtn) {
       const row = stepBtn.closest(".stock-row");
@@ -2262,6 +2501,65 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     renderStockList();
     input.value = "";
   });
+
+  // ---------------------------------------------------------------------
+  // v30 — Editar un producto del inventario (nombre y unidad), tanto en la
+  // pestaña Inventario ("actual") como en el detalle de un evento.
+  // ---------------------------------------------------------------------
+  let stockEditCtx = null; // { scope: "actual" | "detalle", idx }
+  function stockListFor(ctx) {
+    if (ctx.scope === "actual") return eventInfo.stockFinal;
+    const ev = eventosCache[deletingEventoIdx];
+    return (ev && ev.stockFinal) || [];
+  }
+  function saveStockFor(ctx, next) {
+    if (ctx.scope === "actual") { saveStockFinal(next); renderStockList(); return; }
+    const ev = eventosCache[deletingEventoIdx];
+    if (!ev) return;
+    saveEventoDetalleStock(deletingEventoIdx, next);
+    renderEventoDetalleStock({ ...ev, stockFinal: next });
+  }
+  function openEditStock(scope, idx) {
+    const ctx = { scope, idx };
+    const item = stockListFor(ctx)[idx];
+    if (!item) return;
+    stockEditCtx = ctx;
+    $("editStockNombre").value = item.nombre || "";
+    $("editStockUnidad").value = item.unidad === "L" ? "L" : "uds";
+    $("editStockBackdrop").hidden = false;
+  }
+  function closeEditStock() { $("editStockBackdrop").hidden = true; stockEditCtx = null; }
+  $("btnCancelEditStock").addEventListener("click", closeEditStock);
+  $("editStockBackdrop").addEventListener("click", (e) => { if (e.target === $("editStockBackdrop")) closeEditStock(); });
+  $("formEditStock").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!stockEditCtx) return;
+    const ctx = stockEditCtx;
+    const list = stockListFor(ctx);
+    const nombre = $("editStockNombre").value.trim();
+    const unidad = $("editStockUnidad").value === "L" ? "L" : "uds";
+    if (!nombre) { toast("El producto necesita un nombre."); return; }
+    if (list.some((it, i) => i !== ctx.idx && stockKey(it.nombre) === stockKey(nombre))) { toast("Ya hay otro producto con ese nombre."); return; }
+    saveStockFor(ctx, list.map((it, i) => i === ctx.idx ? { ...it, nombre, unidad, cantidad: parseCantidad(it.cantidad, unidad) } : it));
+    closeEditStock();
+    toast("Producto actualizado.");
+  });
+  $("btnDeleteStock").addEventListener("click", () => {
+    if (!stockEditCtx) return;
+    const ctx = stockEditCtx;
+    saveStockFor(ctx, stockListFor(ctx).filter((_, i) => i !== ctx.idx));
+    closeEditStock();
+    toast("Producto quitado.");
+  });
+  function stockNameKey(scope) {
+    return (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const nameEl = e.target.closest(".stock-name");
+      if (nameEl) { e.preventDefault(); openEditStock(scope, Number(nameEl.closest(".stock-row").dataset.idx)); }
+    };
+  }
+  $("stockList").addEventListener("keydown", stockNameKey("actual"));
+  $("eventoDetalleStockList").addEventListener("keydown", stockNameKey("detalle"));
 
   // ---------------------------------------------------------------------
   // Ingresos form
@@ -2332,10 +2630,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------------------------------------------------------------------
   // Edit / delete a gasto — tap a row to open it
   // ---------------------------------------------------------------------
-  function openEditGasto(id) {
-    const g = gastos.find((x) => x.id === id);
+  function openEditGasto(id, evId, gasto) {
+    const g = gasto || gastos.find((x) => x.id === id);
     if (!g) return;
     editingGastoId = id;
+    editingGastoEv = evId || currentEventId;
+    $("editGastoFecha").value = g.fecha || todayISO();
+    fillEventoSelect($("editGastoEvento"), editingGastoEv);
     $("editGastoSuper").value = g.proveedor || "";
     $("editGastoComprador").value = g.comprador || "";
     $("editGastoObs").value = g.observaciones || "";
@@ -2368,7 +2669,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   $("editGastoBackdrop").addEventListener("click", (e) => { if (e.target === $("editGastoBackdrop")) { $("editGastoBackdrop").hidden = true; editingGastoId = null; } });
   $("formEditGasto").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!db || !currentEventId || !editingGastoId) return;
+    if (!db || !editingGastoEv || !editingGastoId) return;
+    const fecha = $("editGastoFecha").value || todayISO();
+    const destino = $("editGastoEvento").value || editingGastoEv;
     const proveedor = $("editGastoSuper").value.trim();
     const comprador = $("editGastoComprador").value.trim();
     const observaciones = $("editGastoObs").value.trim();
@@ -2379,10 +2682,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const submitBtn = e.target.querySelector("button[type=submit]");
     submitBtn.disabled = true;
     try {
-      await db.doc(`eventos/${currentEventId}/gastos/${editingGastoId}`).update({ proveedor, comprador, observaciones, importe, pagado: editingGastoPagado });
+      const cambios = { proveedor, comprador, observaciones, importe, pagado: editingGastoPagado, fecha };
+      const path = `eventos/${editingGastoEv}/gastos/${editingGastoId}`;
+      const movido = destino !== editingGastoEv;
+      if (movido) {
+        // Moved to another event: written there and removed here in ONE
+        // request, so it can never end up in both or in neither.
+        const snap = await db.doc(path).get();
+        await db.batch([
+          { op: "set", path: `eventos/${destino}/gastos/${editingGastoId}`, data: Object.assign({}, snap.exists ? snap.data() : {}, cambios) },
+          { op: "delete", path },
+        ]);
+      } else {
+        await db.doc(path).update(cambios);
+      }
       $("editGastoBackdrop").hidden = true;
       editingGastoId = null;
-      toast("Gasto actualizado.");
+      toast(movido ? "Gasto pasado al otro evento." : "Gasto actualizado.");
     } catch (err) {
       toastErr("No se pudo guardar el gasto", err);
     } finally {
@@ -2390,12 +2706,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
   });
   $("btnDeleteGasto").addEventListener("click", async () => {
-    if (!db || !currentEventId || !editingGastoId) return;
+    if (!db || !editingGastoEv || !editingGastoId) return;
     const btn = $("btnDeleteGasto");
     btn.disabled = true;
     btn.textContent = "Eliminando…";
     try {
-      await db.doc(`eventos/${currentEventId}/gastos/${editingGastoId}`).delete();
+      await db.doc(`eventos/${editingGastoEv}/gastos/${editingGastoId}`).delete();
       $("editGastoBackdrop").hidden = true;
       editingGastoId = null;
       toast("Gasto eliminado.");
@@ -2453,7 +2769,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     submitBtn.disabled = true;
     try {
       if (editando) {
-        await db.doc(`pagos/${pagoCtx.id}`).update({ importe, fecha, nota, tipo, editadoAt: new Date().toISOString() });
+        await db.doc(`pagos/${pagoCtx.id}`).update({ persona, importe, fecha, nota, tipo, editadoAt: new Date().toISOString() });
       } else {
         // "evento" is just a label of which night was open when this got
         // logged — for the record, not a functional link.
@@ -2499,10 +2815,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------------------------------------------------------------------
   // Edit / delete an ingreso — tap a row to open it
   // ---------------------------------------------------------------------
-  function openEditIngreso(id) {
-    const i = ingresos.find((x) => x.id === id);
+  function openEditIngreso(id, evId, ingreso) {
+    const i = ingreso || ingresos.find((x) => x.id === id);
     if (!i) return;
     editingIngresoId = id;
+    editingIngresoEv = evId || currentEventId;
+    $("editIngFecha").value = i.fecha || todayISO();
+    fillEventoSelect($("editIngEvento"), editingIngresoEv);
     $("editIngConcepto").value = i.concepto || "";
     $("editIngBizum").value = i.bizum ? i.bizum : "";
     $("editIngTarjeta").value = i.tarjeta ? i.tarjeta : "";
@@ -2522,7 +2841,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   $("editIngresoBackdrop").addEventListener("click", (e) => { if (e.target === $("editIngresoBackdrop")) { $("editIngresoBackdrop").hidden = true; editingIngresoId = null; } });
   $("formEditIngreso").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!db || !currentEventId || !editingIngresoId) return;
+    if (!db || !editingIngresoEv || !editingIngresoId) return;
+    const fecha = $("editIngFecha").value || todayISO();
+    const destino = $("editIngEvento").value || editingIngresoEv;
     const concepto = $("editIngConcepto").value.trim();
     const bizum = parseFloat($("editIngBizum").value) || 0;
     const tarjeta = parseFloat($("editIngTarjeta").value) || 0;
@@ -2532,10 +2853,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const submitBtn = e.target.querySelector("button[type=submit]");
     submitBtn.disabled = true;
     try {
-      await db.doc(`eventos/${currentEventId}/ingresos/${editingIngresoId}`).update({ concepto, bizum, tarjeta, efectivo });
+      const cambios = { concepto, bizum, tarjeta, efectivo, fecha };
+      const path = `eventos/${editingIngresoEv}/ingresos/${editingIngresoId}`;
+      const movido = destino !== editingIngresoEv;
+      if (movido) {
+        const snap = await db.doc(path).get();
+        await db.batch([
+          { op: "set", path: `eventos/${destino}/ingresos/${editingIngresoId}`, data: Object.assign({}, snap.exists ? snap.data() : {}, cambios) },
+          { op: "delete", path },
+        ]);
+      } else {
+        await db.doc(path).update(cambios);
+      }
       $("editIngresoBackdrop").hidden = true;
       editingIngresoId = null;
-      toast("Ingreso actualizado.");
+      toast(movido ? "Ingreso pasado al otro evento." : "Ingreso actualizado.");
     } catch (err) {
       toastErr("No se pudo guardar el ingreso", err);
     } finally {
@@ -2543,12 +2875,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
   });
   $("btnDeleteIngreso").addEventListener("click", async () => {
-    if (!db || !currentEventId || !editingIngresoId) return;
+    if (!db || !editingIngresoEv || !editingIngresoId) return;
     const btn = $("btnDeleteIngreso");
     btn.disabled = true;
     btn.textContent = "Eliminando…";
     try {
-      await db.doc(`eventos/${currentEventId}/ingresos/${editingIngresoId}`).delete();
+      await db.doc(`eventos/${editingIngresoEv}/ingresos/${editingIngresoId}`).delete();
       $("editIngresoBackdrop").hidden = true;
       editingIngresoId = null;
       toast("Ingreso eliminado.");
@@ -2582,7 +2914,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         closedAt: info.closedAt || null,
         stockFinal: normalizeStockFinal(info),
         gastos: gSnap.docs.map((x) => ({ ...x.data(), _key: `${d.id}/${x.id}`, _evento: label })),
-        ingresos: iSnap.docs.map((x) => x.data()),
+        ingresos: iSnap.docs.map((x) => ({ ...x.data(), _id: x.id })),
       });
     }
     return events;
@@ -2613,6 +2945,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       eventosCache = balancesEncadenados(events).ord.reverse();
       eventosLoaded = true;
       renderEventos();
+      // v30: the detail sheet stays open while its contents are edited —
+      // keep it pointing at the same event and show the new data.
+      if (detalleEventoId && !$("eventoDetalleBackdrop").hidden) {
+        const i = eventosCache.findIndex((e) => e.id === detalleEventoId);
+        if (i === -1) closeEventoDetalle();
+        else { deletingEventoIdx = i; renderEventoDetalle(); }
+      }
     } catch (err) {
       toastErr("No se pudieron cargar los eventos", err);
       if (!eventosLoaded) list.innerHTML = '<div class="empty">No se pudieron cargar los eventos.</div>';
@@ -2650,7 +2989,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const cadena = balancesEncadenados(eventosCache).byId;
     list.innerHTML = eventosCache.map((ev, idx) => {
       const tot = cadena.get(ev.id);
-      const estado = ev.closedAt ? "Cerrada" : (ev.id === currentEventId ? "En curso" : "Abierta");
+      const estado = ev.closedAt ? "Cerrada" : (ev.id === currentEventId ? "Elegido" : "Abierta");
       return `
         <div class="list-item clickable" data-idx="${idx}" role="button" tabindex="0">
           <div class="thumb-placeholder"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg></div>
@@ -2707,13 +3046,32 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (btn) btn.textContent = "Eliminar evento";
   }
 
+  let detalleEventoId = null;
+  function closeEventoDetalle() {
+    $("eventoDetalleBackdrop").hidden = true;
+    resetEventoDeleteArm();
+    deletingEventoIdx = null;
+    detalleEventoId = null;
+  }
   function openEventoDetalle(idx) {
     const ev = eventosCache[idx];
     if (!ev) return;
     deletingEventoIdx = idx;
+    detalleEventoId = ev.id;
     resetEventoDeleteArm();
+    renderEventoDetalle();
+    $("eventoDetalleBackdrop").hidden = false;
+  }
+  function renderEventoDetalle() {
+    const ev = eventosCache[deletingEventoIdx];
+    if (!ev) return;
     const tot = eventoTotales(ev);
-    const estado = ev.closedAt ? "Cerrada" : (ev.id === currentEventId ? "En curso" : "Abierta");
+    // Editable name / date / place — never overwritten while being typed.
+    if (document.activeElement !== $("detEvNombre")) $("detEvNombre").value = ev.nombre || "";
+    if (document.activeElement !== $("detEvFecha")) $("detEvFecha").value = ev.fecha || "";
+    if (document.activeElement !== $("detEvLocal")) $("detEvLocal").value = ev.local || "";
+    $("btnUsarEvento").hidden = ev.id === currentEventId;
+    const estado = ev.closedAt ? "Cerrada" : (ev.id === currentEventId ? "Elegido" : "Abierta");
 
     $("eventoDetalleTitulo").textContent = ev.nombre || "(sin nombre)";
     $("eventoDetalleSub").textContent = [fmtDate(ev.fecha), ev.local, estado].filter(Boolean).join(" · ");
@@ -2727,12 +3085,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const gastosList = $("eventoDetalleGastosList");
     gastosList.innerHTML = gastosOrdenados.length
       ? gastosOrdenados.map((g) => `
-          <div class="list-item">
+          <div class="list-item clickable" data-gid="${esc((g._key || "").split("/")[1] || "")}" role="button" tabindex="0">
             <div class="li-main">
               <div class="li-title">${esc(g.proveedor) || "(sin proveedor)"}</div>
               <div class="li-sub"><span>${esc(fmtDate(g.fecha))}</span>${g.comprador ? `<span>· ${esc(g.comprador)}</span>` : ""}${g.pagado ? `<span>· Pagado</span>` : ""}</div>
             </div>
             <div class="li-amount" style="color:var(--expense)">− ${eur(g.importe)}</div>
+            ${chevronSVG}
           </div>`).join("")
       : '<div class="empty">Sin gastos en este evento.</div>';
 
@@ -2747,20 +3106,74 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           if (i.efectivo) parts.push(`Efectivo ${eur(i.efectivo)}`);
           const hora = i.createdAt ? new Date(i.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "";
           return `
-            <div class="list-item">
+            <div class="list-item clickable" data-iid="${esc(i._id || "")}" role="button" tabindex="0">
               <div class="li-main">
                 <div class="li-title">${esc(i.concepto) || "Ingreso"}</div>
-                <div class="li-sub">${hora ? `<span>${esc(hora)}</span>` : ""}${parts.length ? `<span>· ${esc(parts.join(" + "))}</span>` : ""}</div>
+                <div class="li-sub"><span>${esc(fmtDate(i.fecha))}</span>${hora ? `<span>· ${esc(hora)}</span>` : ""}${parts.length ? `<span>· ${esc(parts.join(" + "))}</span>` : ""}</div>
               </div>
               <div class="li-amount" style="color:var(--income)">+ ${eur(total)}</div>
+              ${chevronSVG}
             </div>`;
         }).join("")
       : '<div class="empty">Sin ingresos en este evento.</div>';
 
-    renderEventoDetalleStock(ev);
-
-    $("eventoDetalleBackdrop").hidden = false;
+    // A count being typed in the sheet is never redrawn under the finger.
+    const sl = $("eventoDetalleStockList");
+    if (!(document.activeElement && sl.contains(document.activeElement))) renderEventoDetalleStock(ev);
   }
+
+  // v30 — everything inside an event can be changed from its detail sheet.
+  function saveDetalleField(field, value) {
+    const ev = eventosCache[deletingEventoIdx];
+    if (!ev || !db) { toast("No se puede guardar sin conexión de datos."); return; }
+    eventosCache[deletingEventoIdx] = { ...ev, [field]: value };
+    db.doc(`eventos/${ev.id}`).update({ [field]: value }).catch((err) => toastErr("No se pudo guardar el evento", err));
+    toast("Evento actualizado.");
+  }
+  $("detEvNombre").addEventListener("change", (e) => {
+    const ev = eventosCache[deletingEventoIdx];
+    const v = e.target.value.trim();
+    if (!v) { e.target.value = (ev && ev.nombre) || ""; toast("El nombre del evento es obligatorio."); return; }
+    saveDetalleField("nombre", v);
+  });
+  $("detEvFecha").addEventListener("change", (e) => {
+    const ev = eventosCache[deletingEventoIdx];
+    if (!e.target.value) { e.target.value = (ev && ev.fecha) || todayISO(); toast("La fecha es obligatoria."); return; }
+    saveDetalleField("fecha", e.target.value);
+  });
+  $("detEvLocal").addEventListener("change", (e) => saveDetalleField("local", e.target.value.trim()));
+  $("btnUsarEvento").addEventListener("click", () => {
+    const ev = eventosCache[deletingEventoIdx];
+    if (!ev) return;
+    selectEvento(ev.id);
+    closeEventoDetalle();
+    goTab("gastos");
+    toast(`Evento elegido: ${evLabel(ev)}.`);
+  });
+  function detalleRowOpen(e) {
+    const ev = eventosCache[deletingEventoIdx];
+    if (!ev) return false;
+    const gRow = e.target.closest(".list-item[data-gid]");
+    if (gRow) {
+      const g = ev.gastos.find((x) => (x._key || "").split("/")[1] === gRow.dataset.gid);
+      if (g) openEditGasto(gRow.dataset.gid, ev.id, g);
+      return true;
+    }
+    const iRow = e.target.closest(".list-item[data-iid]");
+    if (iRow) {
+      const i = ev.ingresos.find((x) => x._id === iRow.dataset.iid);
+      if (i) openEditIngreso(iRow.dataset.iid, ev.id, i);
+      return true;
+    }
+    return false;
+  }
+  ["eventoDetalleGastosList", "eventoDetalleIngresosList"].forEach((id) => {
+    $(id).addEventListener("click", detalleRowOpen);
+    $(id).addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      if (detalleRowOpen(e)) e.preventDefault();
+    });
+  });
 
   // Inventario final del evento (dentro del detalle en "Eventos") — editable,
   // para poder corregir un conteo equivocado incluso después de cerrar la
@@ -2773,7 +3186,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     stockList.innerHTML = stock.length
       ? stock.map((s, idx) => `
         <div class="stock-row" data-idx="${idx}">
-          <div class="stock-name">${esc(s.nombre)}</div>
+          <div class="stock-name" role="button" tabindex="0" title="Toca para cambiar el nombre o la unidad">${esc(s.nombre)} <span class="edit-mark">✎</span></div>
           <button type="button" class="stock-step" data-step="-1" aria-label="Menos ${esc(s.nombre)}">−</button>
           <input type="number" inputmode="${s.unidad === "L" ? "decimal" : "numeric"}" min="0" step="${s.unidad === "L" ? "0.1" : "1"}" placeholder="0" value="${s.cantidad != null ? s.cantidad : ""}">
           <button type="button" class="stock-step" data-step="1" aria-label="Más ${esc(s.nombre)}">+</button>
@@ -2817,6 +3230,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     saveEventoDetalleStock(deletingEventoIdx, next);
   });
   $("eventoDetalleStockList").addEventListener("click", (e) => {
+    const nameEl = e.target.closest(".stock-name");
+    if (nameEl) { openEditStock("detalle", Number(nameEl.closest(".stock-row").dataset.idx)); return; }
     const stepBtn = e.target.closest(".stock-step");
     if (stepBtn) {
       if (deletingEventoIdx == null) return;
@@ -2864,8 +3279,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     openEventoDetalle(Number(row.dataset.idx));
   });
   $("btnRefreshEventos").addEventListener("click", () => loadEventos());
-  $("btnCloseEventoDetalle").addEventListener("click", () => { $("eventoDetalleBackdrop").hidden = true; resetEventoDeleteArm(); deletingEventoIdx = null; });
-  $("eventoDetalleBackdrop").addEventListener("click", (e) => { if (e.target === $("eventoDetalleBackdrop")) { $("eventoDetalleBackdrop").hidden = true; resetEventoDeleteArm(); deletingEventoIdx = null; } });
+  $("btnCloseEventoDetalle").addEventListener("click", closeEventoDetalle);
+  $("eventoDetalleBackdrop").addEventListener("click", (e) => { if (e.target === $("eventoDetalleBackdrop")) closeEventoDetalle(); });
 
   $("btnDeleteEvento").addEventListener("click", async () => {
     if (deletingEventoIdx == null) return;
@@ -2886,7 +3301,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     btn.textContent = "Eliminando…";
     try {
       const wasCurrent = ev.id === currentEventId;
-      if (wasCurrent) {
+      const otros = eventosCache.filter((x) => x.id !== ev.id);
+      let pasaA = null;
+      if (wasCurrent && otros.length) {
+        // v30: other events exist — move this phone to the most recent one
+        // instead of creating an empty event nobody asked for.
+        pasaA = otros[0];
+        await deleteEventCompletely(ev.id, [{ op: "set", path: "app/state", data: { currentEventId: pasaA.id } }]);
+        rememberChosen(pasaA.id);
+        switchToEvent(pasaA.id);
+      } else if (wasCurrent) {
         // The night in progress is going away — a fresh, empty one replaces
         // it in the SAME request, so Gastos/Ingresos/Resumen always have
         // somewhere to write to and there is never a moment with no night.
@@ -2907,10 +3331,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       await loadHistoricalData();
       await loadEventos();
 
-      $("eventoDetalleBackdrop").hidden = true;
-      deletingEventoIdx = null;
-      toast(wasCurrent
-        ? "Evento eliminado. Se ha abierto una noche nueva vacía — ponle nombre en Gastos."
+      closeEventoDetalle();
+      toast(pasaA ? `Evento eliminado. Ahora estás en «${evLabel(pasaA)}».`
+        : wasCurrent ? "Evento eliminado. Se ha abierto un evento nuevo vacío — ponle nombre en Gastos."
         : "Evento eliminado.");
     } catch (err) {
       toastErr("No se pudo eliminar el evento", err);
@@ -3197,43 +3620,68 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // saved — every change already goes to Google and to the Drive Excel on
   // its own. This only files tonight under Eventos and opens an empty one.
   // ---------------------------------------------------------------------
-  $("btnCloseNight").addEventListener("click", () => {
-    if (!eventIsComplete()) { toast("Ponle nombre y fecha al evento antes de empezar otra noche."); focusEventFix(); return; }
-    const nombre = eventInfo.nombre || "esta noche";
-    $("closeSummary").textContent =
-      `${nombre}: ${eur(totalIngresos())} de ingresos, ${eur(totalGastos())} de gastos, balance ${eur(balance())}. ` +
-      "Queda guardada en Eventos y en el Excel de Drive, y se abre una caja nueva y vacía.";
+  function openNuevoEvento() {
+    if (!db) { toast("No se puede crear un evento sin conexión de datos."); return; }
+    $("formNuevoEvento").reset();
+    $("nuevoEvFecha").value = todayISO();
+    $("nuevoEvLocal").value = eventInfo.local || "Zebra";
+    // Opened from the event picker: the picker steps aside (one sheet at
+    // a time) and comes back if the creation is cancelled.
+    nuevoDesdePick = !$("pickEventoBackdrop").hidden;
+    $("pickEventoBackdrop").hidden = true;
     $("closeBackdrop").hidden = false;
-  });
-  $("btnCancelClose").addEventListener("click", () => { $("closeBackdrop").hidden = true; });
-  $("closeBackdrop").addEventListener("click", (e) => { if (e.target === $("closeBackdrop")) $("closeBackdrop").hidden = true; });
+    setTimeout(() => $("nuevoEvNombre").focus(), 50);
+  }
+  let nuevoDesdePick = false;
+  function cancelNuevoEvento() {
+    $("closeBackdrop").hidden = true;
+    if (nuevoDesdePick) { nuevoDesdePick = false; openPickEvento(); }
+  }
+  $("btnCloseNight").addEventListener("click", () => openNuevoEvento());
+  $("btnCancelClose").addEventListener("click", cancelNuevoEvento);
+  $("closeBackdrop").addEventListener("click", (e) => { if (e.target === $("closeBackdrop")) cancelNuevoEvento(); });
 
-  $("btnConfirmClose").addEventListener("click", async () => {
-    if (!db || !currentEventId) { toast("No se puede empezar otra noche sin conexión de datos."); return; }
+  $("formNuevoEvento").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!db) { toast("No se puede crear un evento sin conexión de datos."); return; }
+    const nombre = $("nuevoEvNombre").value.trim();
+    const fecha = $("nuevoEvFecha").value;
+    const local = $("nuevoEvLocal").value.trim();
+    if (!nombre) { toast("El nombre del evento es obligatorio."); return; }
+    if (!fecha) { toast("La fecha es obligatoria."); return; }
     const btn = $("btnConfirmClose");
     const label = $("btnConfirmCloseLabel");
     btn.disabled = true;
-    label.textContent = "Abriendo…";
+    label.textContent = "Creando…";
     try {
-      await db.doc(`eventos/${currentEventId}`).update({ closedAt: new Date().toISOString() });
-      const newId = await createFreshEvent();
-      await db.doc("app/state").set({ currentEventId: newId });
-      switchToEvent(newId);
-      // The previous night's gastos now count as history, not "current
-      // night" — refresh so "A quién se debe" keeps showing their debt.
-      loadHistoricalData();
+      // An event that was never named and has nothing in it is the empty
+      // one the app opened by itself: use it instead of leaving it behind.
+      let id = null;
+      if (currentEventId) {
+        const [cur, gs, is] = await Promise.all([
+          db.doc(`eventos/${currentEventId}`).get(),
+          db.collection(`eventos/${currentEventId}/gastos`).get(),
+          db.collection(`eventos/${currentEventId}/ingresos`).get(),
+        ]);
+        if (cur.exists && !(cur.data().nombre || "").trim() && !gs.size && !is.size) {
+          await db.doc(`eventos/${currentEventId}`).update({ nombre, fecha, local });
+          id = currentEventId;
+        }
+      }
+      if (!id) id = await createFreshEvent({ nombre, fecha, local });
+      await db.doc("app/state").set({ currentEventId: id });
+      selectEvento(id);
       scheduleDriveSync(0);
-
-      document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "gastos"));
-      ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
-
       $("closeBackdrop").hidden = true;
-      toast("Noche nueva abierta. La anterior está en Eventos y en el Excel.");
+      nuevoDesdePick = false;
+      closePickEvento();
+      goTab("gastos");
+      toast(`Evento «${nombre}» creado y elegido.`);
     } catch (err) {
-      toastErr("No se pudo empezar la noche nueva", err);
+      toastErr("No se pudo crear el evento", err);
     } finally {
       btn.disabled = false;
-      label.textContent = "Sí, empezar noche nueva";
+      label.textContent = "Crear evento";
     }
   });
 
