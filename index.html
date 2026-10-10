@@ -216,6 +216,26 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     border-radius: 10px;
     cursor: pointer;
   }
+  nav.tabbar button { font-size: 10.5px; padding: 6px 1px; min-width: 0; }
+  nav.tabbar { gap: 2px; padding-left: 6px; padding-right: 6px; }
+  #personasScope .seg-btn.active { background: var(--amber-soft); color: var(--amber-ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 12px; }
+  .chip { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 100px; cursor: pointer; }
+  .chip.on { background: var(--amber-soft); border-color: var(--amber); color: var(--amber-ink); }
+  .per-card { padding: 12px 14px; }
+  .per-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .per-name { font-size: 16px; font-weight: 700; }
+  .per-total { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 16px; }
+  .per-sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; }
+  .per-sub b.pend { color: var(--expense); } .per-sub b.ok { color: var(--income); }
+  .per-ev { font-size: 12px; color: var(--ink-faint); margin-top: 3px; overflow-wrap: anywhere; }
+  .per-det { margin-top: 8px; font-size: 13px; }
+  .per-det summary { cursor: pointer; color: var(--amber-ink); font-weight: 600; }
+  .per-line { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+  .per-line:first-of-type { margin-top: 6px; }
+  .per-line .l { min-width: 0; overflow-wrap: anywhere; }
+  .per-line .l small { display: block; color: var(--ink-faint); font-size: 11.5px; }
+  .per-line .r { font-family: "JetBrains Mono", monospace; white-space: nowrap; text-align: right; }
   nav.tabbar button svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 1.7; }
   nav.tabbar button.active { color: var(--amber-ink); background: var(--amber-soft); }
 
@@ -452,6 +472,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           <input id="gastoImporte" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" required>
         </div>
       </div>
+      <div class="chips" data-chips-for="gastoComprador"><button type="button" class="chip" data-nombre="Vincent">Vincent</button><button type="button" class="chip" data-nombre="Ana">Ana</button><button type="button" class="chip" data-nombre="Merli">Merli</button></div>
       <div class="field" style="margin-bottom:14px;">
         <label for="gastoObs">Observaciones (opcional)</label>
         <textarea id="gastoObs" rows="2" placeholder="Ej. faltaba hielo, se compró en dos tandas…"></textarea>
@@ -533,6 +554,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <svg viewBox="0 0 24 24"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 10a8 8 0 0 0-14.6-3.4M4 14a8 8 0 0 0 14.6 3.4"/></svg>
       Actualizar
     </button>
+  </section>
+
+  <!-- ===================== TAB: PERSONAS ===================== -->
+  <section class="tab" id="tab-personas" hidden>
+    <div class="section-title">Personas — quién pagó qué</div>
+    <div class="section-hint">Lo que cada persona ha pagado de su bolsillo en compras, cuánto se le ha devuelto ya y cuánto falta. Se calcula solo a partir de los gastos (campo «Compró») y de los reembolsos.</div>
+    <div class="segmented" id="personasScope" style="margin-bottom:14px;">
+      <button type="button" data-scope="todos" class="seg-btn active">Todos los eventos</button>
+      <button type="button" data-scope="evento" class="seg-btn">Este evento</button>
+    </div>
+    <div class="stack" id="personasList" style="margin-bottom:12px;"></div>
+    <div class="card" id="personasTotalCard">
+      <div class="subtotal-row"><span class="k">Total pagado por todos</span><span class="v" id="personasTotal">0,00 €</span></div>
+      <div class="subtotal-row"><span class="k">Pendiente de reembolsar</span><span class="v" id="personasPend">0,00 €</span></div>
+    </div>
   </section>
 
   <!-- ===================== TAB: RESUMEN ===================== -->
@@ -632,6 +668,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   <button data-tab="eventos">
     <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>
     Eventos
+  </button>
+  <button data-tab="personas">
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.8.2 5 2.5 5 5.3"/></svg>
+    Personas
   </button>
   <button data-tab="resumen">
     <svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
@@ -755,6 +795,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           <input id="editGastoImporte" type="number" inputmode="decimal" step="0.01" min="0" required>
         </div>
       </div>
+      <div class="chips" data-chips-for="editGastoComprador"><button type="button" class="chip" data-nombre="Vincent">Vincent</button><button type="button" class="chip" data-nombre="Ana">Ana</button><button type="button" class="chip" data-nombre="Merli">Merli</button></div>
       <div class="field" style="margin-bottom:14px;">
         <label for="editGastoObs">Observaciones (opcional)</label>
         <textarea id="editGastoObs" rows="2"></textarea>
@@ -1069,7 +1110,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v31-web";
+  const BUILD_VERSION = "v32-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1771,7 +1812,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function wasAsked() { try { return !!sessionStorage.getItem(ASKED_KEY); } catch (e) { return false; } }
   function goTab(name) {
     document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
-    ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
+    ["gastos", "ingresos", "inventario", "eventos", "personas", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
     if (name === "eventos") loadEventos();
   }
   // Every event, most recent first (by date, then creation).
@@ -2059,7 +2100,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // Jump to Resumen and put the cursor right in the missing field.
   function focusEventFix() {
     document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "resumen"));
-    ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "resumen"; });
+    ["gastos", "ingresos", "inventario", "eventos", "personas", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "resumen"; });
     const target = (!eventInfo.nombre || !eventInfo.nombre.trim()) ? $("evNombre") : $("evFecha");
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     target.focus();
@@ -2149,7 +2190,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // and whatever is still pending is attributed to the night it came from.
   // ---------------------------------------------------------------------
   const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
-  const personaKey = (s) => (s || "").trim() || "Sin especificar";
+  // The bar team. They always appear in "Personas" (even at 0 €) and any
+  // spelling of their name ("vincent", " ANA ") is counted as the same person.
+  const PERSONAS_FIJAS = ["Vincent", "Ana", "Merli"];
+  const personaKey = (s) => {
+    const t = (s || "").trim();
+    if (!t) return "Sin especificar";
+    const k = slugify(t);
+    return PERSONAS_FIJAS.find((n) => slugify(n) === k) || t;
+  };
   function evLabel(info) {
     return ((info && info.nombre) || "").trim() || (info && info.fecha ? fmtDate(info.fecha) : "") || "(sin nombre)";
   }
@@ -2164,6 +2213,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if (!personas.has(n)) personas.set(n, { nombre: n, gastado: 0, pagadoItem: 0, pagadoLedger: 0, pendiente: 0, aFavor: 0, porEvento: new Map(), pend: [] });
       return personas.get(n);
     };
+    for (const n of PERSONAS_FIJAS) acc(n);
     for (const g of gastosList) {
       const a = acc(personaKey(g.comprador));
       const imp = Number(g.importe) || 0;
@@ -2255,8 +2305,100 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           <button type="button" class="pago-remove" data-id="${esc(p.id)}" aria-label="Deshacer pago a ${esc(p.persona || "")}">✕</button>
         </div>`).join("");
     }
+    renderPersonas();
     renderDiag();
   }
+
+  // ---------------------------------------------------------------------
+  // Personas — who paid what. Same numbers as "Pendientes de reembolso"
+  // (calcReembolsos), plus the list of each person's purchases.
+  // ---------------------------------------------------------------------
+  let personasScope = "todos";
+  const personasAbiertas = new Set();
+  function renderPersonas() {
+    const el = $("personasList");
+    if (!el) return;
+    const todos = [...historicalGastos, ...currentGastosLabeled()];
+    const { personas, estadoGasto } = calcReembolsos(todos, pagos);
+    const soloEvento = personasScope === "evento";
+    const prefijo = `${currentEventId}/`;
+    const compras = new Map();
+    for (const g of todos) {
+      if (soloEvento && !(g._key || "").startsWith(prefijo)) continue;
+      const n = personaKey(g.comprador);
+      if (!compras.has(n)) compras.set(n, []);
+      compras.get(n).push(g);
+    }
+    const orden = [...personas.values()].sort((a, b) => {
+      const ia = PERSONAS_FIJAS.indexOf(a.nombre), ib = PERSONAS_FIJAS.indexOf(b.nombre);
+      if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+      return a.nombre.localeCompare(b.nombre);
+    });
+    let sumTotal = 0, sumPend = 0;
+    const html = orden.map((a) => {
+      const lista = (compras.get(a.nombre) || []).sort((x, y) => (y.fecha || "").localeCompare(x.fecha || "") || (y.createdAt || "").localeCompare(x.createdAt || ""));
+      const esFija = PERSONAS_FIJAS.includes(a.nombre);
+      if (!lista.length && !esFija && (soloEvento || (a.pendiente < 0.005 && a.aFavor < 0.005))) return "";
+      const total = round2(lista.reduce((s, g) => s + (Number(g.importe) || 0), 0));
+      let pend = 0;
+      const porEv = new Map();
+      const lineas = lista.map((g) => {
+        const imp = Number(g.importe) || 0;
+        const st = estadoGasto.get(g._key) || { estado: "pendiente", pendiente: imp };
+        pend += st.pendiente || 0;
+        const ev = g._evento || "(sin nombre)";
+        porEv.set(ev, round2((porEv.get(ev) || 0) + imp));
+        const pill = st.estado === "marcado" ? '<span class="pill pill-paid">Pagado</span>'
+          : st.estado === "reembolsado" ? '<span class="pill pill-paid">Reembolsado</span>'
+          : st.estado === "parcial" ? `<span class="pill pill-pending">Falta ${eur(st.pendiente)}</span>`
+          : '<span class="pill pill-pending">Pendiente</span>';
+        return `<div class="per-line"><div class="l">${esc(g.proveedor) || "Gasto"}<small>${esc(fmtDate(g.fecha))} · ${esc(ev)}${g.observaciones ? " · " + esc(g.observaciones) : ""}</small></div><div class="r">${eur(imp)}<br>${pill}</div></div>`;
+      }).join("");
+      pend = round2(pend);
+      const devuelto = round2(total - pend);
+      sumTotal += total; sumPend += pend;
+      const sub = !lista.length
+        ? (soloEvento ? "No ha pagado nada en este evento." : "No ha pagado nada todavía.")
+        : `${lista.length} ${lista.length === 1 ? "compra" : "compras"} · Devuelto <b class="ok">${eur(devuelto)}</b> · Falta <b class="${pend >= 0.005 ? "pend" : "ok"}">${eur(pend)}</b>`;
+      const evs = !soloEvento && porEv.size > 1 ? `<div class="per-ev">${[...porEv.entries()].map(([ev, v]) => `${esc(ev)}: ${eur(v)}`).join(" · ")}</div>` : "";
+      const favor = !soloEvento && a.aFavor >= 0.005 ? `<div class="per-ev">Se le ha pagado de más: a favor ${eur(a.aFavor)}</div>` : "";
+      const det = lista.length ? `<details class="per-det" data-persona="${esc(a.nombre)}"${personasAbiertas.has(a.nombre) ? " open" : ""}><summary>Ver sus compras</summary>${lineas}</details>` : "";
+      return `<div class="card per-card"><div class="per-head"><span class="per-name">${esc(a.nombre)}</span><span class="per-total">${eur(total)}</span></div><div class="per-sub">${sub}</div>${evs}${favor}${det}</div>`;
+    }).join("");
+    el.innerHTML = html;
+    $("personasTotal").textContent = eur(round2(sumTotal));
+    $("personasPend").textContent = eur(round2(sumPend));
+  }
+  $("personasList").addEventListener("toggle", (e) => {
+    const d = e.target;
+    if (!d || !d.dataset || !d.dataset.persona) return;
+    if (d.open) personasAbiertas.add(d.dataset.persona); else personasAbiertas.delete(d.dataset.persona);
+  }, true);
+  $("personasScope").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-scope]");
+    if (!b) return;
+    personasScope = b.dataset.scope;
+    $("personasScope").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
+    renderPersonas();
+  });
+  // Quick-pick chips for "Compró" (add + edit gasto forms).
+  function syncChips() {
+    document.querySelectorAll(".chips[data-chips-for]").forEach((box) => {
+      const v = personaKey($(box.dataset.chipsFor).value);
+      box.querySelectorAll(".chip").forEach((c) => c.classList.toggle("on", c.dataset.nombre === v));
+    });
+  }
+  document.querySelectorAll(".chips[data-chips-for]").forEach((box) => {
+    const input = $(box.dataset.chipsFor);
+    box.addEventListener("click", (e) => {
+      const c = e.target.closest(".chip");
+      if (!c) return;
+      input.value = c.dataset.nombre;
+      syncChips();
+    });
+    input.addEventListener("input", syncChips);
+    input.form && input.form.addEventListener("reset", () => setTimeout(syncChips, 0));
+  });
 
   // One tap on OK = "this person has been paid back everything pending".
   // The payment id is derived from (person, amount, how many payments they
@@ -2377,7 +2519,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const name = btn.dataset.tab;
-      ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
+      ["gastos", "ingresos", "inventario", "eventos", "personas", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
       if (name === "eventos") loadEventos();
     });
   });
@@ -2695,6 +2837,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     fillEventoSelect($("editGastoEvento"), editingGastoEv);
     $("editGastoSuper").value = g.proveedor || "";
     $("editGastoComprador").value = g.comprador || "";
+    syncChips();
     $("editGastoObs").value = g.observaciones || "";
     $("editGastoImporte").value = g.importe != null ? g.importe : "";
     editingGastoPagado = !!g.pagado;
@@ -3378,7 +3521,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         ]);
         switchToEvent(freshId);
         document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "gastos"));
-        ["gastos", "ingresos", "inventario", "eventos", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
+        ["gastos", "ingresos", "inventario", "eventos", "personas", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
       } else {
         await deleteEventCompletely(ev.id);
       }
