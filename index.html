@@ -103,7 +103,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   button { font-family: inherit; }
   input, select, textarea {
     font-family: "Work Sans", system-ui, sans-serif;
-    font-size: 15px;
+    font-size: 16px; /* >=16px: iOS Safari no hace zoom al tocar el campo */
     color: var(--ink);
     background: var(--surface-2);
     border: 1px solid var(--line);
@@ -343,9 +343,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .stock-row .stock-name { flex: 1; font-weight: 600; font-size: 14.5px; }
   .stock-prev { font-weight: 400; font-size: 12px; color: var(--ink-faint); margin-top: 1px; }
   .stock-row { gap: 6px; }
-  .stock-row input[type="number"] { width: 56px; text-align: center; padding: 8px 4px; -moz-appearance: textfield; }
-  .stock-row input[type="number"]::-webkit-outer-spin-button,
-  .stock-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stock-row input.num-input { width: 64px; text-align: center; padding: 8px 4px; }
+  input.num-input { font-variant-numeric: tabular-nums; }
+  input.num-input.invalid { border-color: #c0392b; outline-color: #c0392b; }
   .stock-row .stock-step {
     width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px; border: 1px solid var(--line);
     background: var(--surface); color: var(--ink); font-size: 22px; line-height: 1; font-weight: 600;
@@ -469,7 +469,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         </div>
         <div class="field">
           <label for="gastoImporte">Importe (€)</label>
-          <input id="gastoImporte" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" required>
+          <input id="gastoImporte" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false" class="num-input" placeholder="0,00" required>
         </div>
       </div>
       <div class="field" style="margin-bottom:14px;">
@@ -499,15 +499,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="field-3col">
         <div class="field">
           <label for="ingBizum">Bizum (€)</label>
-          <input id="ingBizum" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+          <input id="ingBizum" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false" class="num-input" placeholder="0,00">
         </div>
         <div class="field">
           <label for="ingTarjeta">Tarjeta (€)</label>
-          <input id="ingTarjeta" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+          <input id="ingTarjeta" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false" class="num-input" placeholder="0,00">
         </div>
         <div class="field">
           <label for="ingEfectivo">Efectivo (€)</label>
-          <input id="ingEfectivo" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+          <input id="ingEfectivo" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false" class="num-input" placeholder="0,00">
         </div>
       </div>
       <button class="btn btn-primary" type="submit">Añadir ingreso</button>
@@ -791,7 +791,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         </div>
         <div class="field">
           <label for="editGastoImporte">Importe (€)</label>
-          <input id="editGastoImporte" type="number" inputmode="decimal" step="0.01" min="0" required>
+          <input id="editGastoImporte" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false" class="num-input" required>
         </div>
       </div>
       <div class="field" style="margin-bottom:14px;">
@@ -839,7 +839,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="row2">
         <div class="field">
           <label for="pagoImporte">Importe (€)<span class="req"> *</span></label>
-          <input id="pagoImporte" type="number" inputmode="decimal" step="any" min="0" required>
+          <input id="pagoImporte" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false" class="num-input" required>
         </div>
         <div class="field">
           <label for="pagoFecha">Fecha</label>
@@ -875,15 +875,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="field-3col" style="margin-bottom:14px;">
         <div class="field" style="margin-bottom:0;">
           <label for="editIngBizum">Bizum (€)</label>
-          <input id="editIngBizum" type="number" inputmode="decimal" step="0.01" min="0">
+          <input id="editIngBizum" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false" class="num-input">
         </div>
         <div class="field" style="margin-bottom:0;">
           <label for="editIngTarjeta">Tarjeta (€)</label>
-          <input id="editIngTarjeta" type="number" inputmode="decimal" step="0.01" min="0">
+          <input id="editIngTarjeta" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false" class="num-input">
         </div>
         <div class="field" style="margin-bottom:0;">
           <label for="editIngEfectivo">Efectivo (€)</label>
-          <input id="editIngEfectivo" type="number" inputmode="decimal" step="0.01" min="0">
+          <input id="editIngEfectivo" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false" class="num-input">
         </div>
       </div>
       <div class="row2">
@@ -975,6 +975,82 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!y || !m || !d) return iso;
     return `${d}/${m}/${y}`;
   };
+  // Números escritos a mano (importes, litros). Los campos son type="text"
+  // con teclado decimal: un campo de tipo número rechaza la coma en muchos móviles
+  // (teclados Samsung/Android sin coma, Safari que vacía "12,50"), y el
+  // importe llegaba vacío -> "Indica un importe". Aquí se acepta 12,50 ·
+  // 12.50 · 1.234,56 · 1,234.56 · "12 €". Devuelve NaN si no es un número.
+  function parseNum(v) {
+    if (typeof v === "number") return isFinite(v) ? v : NaN;
+    let t = String(v == null ? "" : v).replace(/[\s\u00a0\u202f€]/g, "").replace(/^\+/, "");
+    if (t === "") return NaN;
+    if (!/^-?[0-9.,]+$/.test(t) || !/[0-9]/.test(t)) return NaN;
+    const lastC = t.lastIndexOf(","), lastD = t.lastIndexOf(".");
+    if (lastC !== -1 && lastD !== -1) {
+      // Both present: whichever comes last is the decimal separator.
+      const dec = lastC > lastD ? "," : ".";
+      const thou = dec === "," ? "." : ",";
+      t = t.split(thou).join("");
+      if (t.split(dec).length > 2) return NaN;
+      t = t.replace(dec, ".");
+    } else if (lastC !== -1) {
+      const parts = t.split(",");
+      // "1,234,567" = thousands; "12,5" / "12,50" = decimals.
+      if (parts.length > 2) { if (parts.slice(1).every((p) => p.length === 3)) t = parts.join(""); else return NaN; }
+      else t = parts.join(".");
+    } else if (lastD !== -1) {
+      const parts = t.split(".");
+      if (parts.length > 2) { if (parts.slice(1).every((p) => p.length === 3)) t = parts.join(""); else return NaN; }
+      // "1.500" en España son mil quinientos (nunca hay 3 decimales en euros);
+      // "12.50" / "3.2" se leen como decimales.
+      else if (parts[1].length === 3 && parts[0] !== "" && parts[0] !== "0") t = parts.join("");
+    }
+    const n = Number(t);
+    return isFinite(n) ? n : NaN;
+  }
+  // Importe en euros: >= 0, redondeado a céntimos. Vacío -> 0 si allowEmpty.
+  function parseImporte(v, allowEmpty) {
+    if (allowEmpty && String(v == null ? "" : v).trim() === "") return 0;
+    const n = parseNum(v);
+    if (!(n >= 0)) return NaN;
+    return Math.round(n * 100) / 100;
+  }
+  // Valor para volver a poner en un campo: con coma, sin separador de miles.
+  function fmtNumInput(n) {
+    if (n == null || n === "" || !isFinite(Number(n))) return "";
+    const x = Math.round(Number(n) * 100) / 100;
+    return String(x).replace(".", ",");
+  }
+  function fmtImporteInput(n) {
+    if (n == null || n === "" || !isFinite(Number(n)) || Number(n) === 0) return "";
+    return (Math.round(Number(n) * 100) / 100).toFixed(2).replace(".", ",");
+  }
+  // Antes de guardar: un campo de importe con algo que no es un número se
+  // marca en rojo y se avisa, en vez de guardarse como 0 en silencio.
+  function checkNums(ids) {
+    for (const id of ids) {
+      const el = $(id);
+      if (!el) continue;
+      const v = String(el.value || "").trim();
+      if (v !== "" && !(parseNum(v) >= 0)) {
+        el.classList.add("invalid");
+        toast("Importe no válido: escribe solo el número, p. ej. 12,50");
+        try { el.focus(); } catch (e) {}
+        return false;
+      }
+    }
+    return true;
+  }
+  // Mientras se escribe: fuera letras y signos raros (un teclado sin coma
+  // puede usar el punto; los dos valen) y marca en rojo lo que no se entiende.
+  document.addEventListener("input", (e) => {
+    const el = e.target;
+    if (!el || !el.classList || !el.classList.contains("num-input")) return;
+    const limpio = el.value.replace(/[^0-9.,\s€]/g, "");
+    if (limpio !== el.value) el.value = limpio;
+    const v = limpio.trim();
+    el.classList.toggle("invalid", v !== "" && !(parseNum(v) >= 0));
+  }, true);
   function arrayBufferToBase64(buf) {
     const bytes = new Uint8Array(buf);
     let binary = "";
@@ -1108,7 +1184,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v33-web";
+  const BUILD_VERSION = "v34-web";
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1136,9 +1212,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return (unidad === "L" ? n.toLocaleString("es-ES", { maximumFractionDigits: 2 }) + " L" : String(n));
   }
   function parseCantidad(v, unidad) {
-    v = String(v == null ? "" : v).trim().replace(",", ".");
-    if (v === "") return null;
-    const n = Math.max(0, parseFloat(v) || 0);
+    if (v == null || String(v).trim() === "") return null;
+    const p = parseNum(v);
+    const n = Math.max(0, isFinite(p) ? p : 0);
     return unidad === "L" ? Math.round(n * 100) / 100 : Math.round(n);
   }
   // One-time upgrade of an OPEN night that still has the old generic list
@@ -2423,7 +2499,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (pago) {
       pagoCtx = { mode: "edit", id: pago.id, persona: personaKey(pago.persona), overOk: false, tipo: pago.tipo || "pago", importeAntes: Number(pago.importe) || 0 };
       $("pagoPersona").value = pago.persona || "";
-      $("pagoImporte").value = (Number(pago.importe) || 0).toFixed(2);
+      $("pagoImporte").value = fmtImporteInput(pago.importe);
       $("pagoFecha").value = pago.fecha || todayISO();
       $("pagoNota").value = pago.nota || "";
       $("pagoSheetTitle").textContent = `Editar pago a ${pago.persona || ""}`;
@@ -2436,7 +2512,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       $("pagoSubmit").textContent = "Guardar pago";
       if (persona) {
         $("pagoPersona").value = persona;
-        $("pagoImporte").value = pendiente.toFixed(2);
+        $("pagoImporte").value = fmtImporteInput(pendiente);
         $("pagoSheetTitle").textContent = `Pago parcial a ${persona}`;
         $("pagoPendHint").textContent = `Pendiente ahora: ${eur(pendiente)}. Cambia el importe si hoy pagáis solo una parte; el resto seguirá pendiente.`;
         $("pagoPendHint").hidden = false;
@@ -2586,6 +2662,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const list = $("stockList");
     if (!eventInfo.stockFinal.length) {
       list.innerHTML = '<div class="empty">Sin productos todavía. Añade cerveza, Coca-Cola, vino…</div>';
+      list.dataset.sig = "";
       return;
     }
     const prevMap = new Map(previousStockFinal.filter((s) => s.nombre).map((s) => [stockKey(s.nombre), s]));
@@ -2597,32 +2674,35 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="stock-row" data-idx="${idx}">
         <div class="stock-name" role="button" tabindex="0" title="Toca para cambiar el nombre o la unidad">${esc(item.nombre)} <span class="edit-mark">✎</span>${prevHint}</div>
         <button type="button" class="stock-step" data-step="-1" aria-label="Menos ${esc(item.nombre)}">−</button>
-        <input type="number" inputmode="${isL ? "decimal" : "numeric"}" min="0" step="${isL ? "0.1" : "1"}" placeholder="0" value="${item.cantidad != null ? item.cantidad : ""}" aria-label="${esc(item.nombre)} (${isL ? "litros" : "unidades"})">
+        <input type="text" class="num-input" inputmode="${isL ? "decimal" : "numeric"}" autocomplete="off" spellcheck="false" placeholder="0" value="${esc(fmtNumInput(item.cantidad))}" aria-label="${esc(item.nombre)} (${isL ? "litros" : "unidades"})">
         <button type="button" class="stock-step" data-step="1" aria-label="Más ${esc(item.nombre)}">+</button>
         <span class="stock-unit">${isL ? "L" : "uds"}</span>
         <button type="button" class="stock-remove" aria-label="Quitar ${esc(item.nombre)}">✕</button>
       </div>`;
     }).join("");
-    // v29: while a count is being typed, never rebuild the list under the
-    // finger (the field would lose focus and the keyboard would close).
-    // Same products -> only refresh the OTHER fields' numbers in place.
+    // v34: the list is only rebuilt when the products themselves change
+    // (name, unit, "Antes:" hint). A new count is patched into the existing
+    // fields instead. Before, saving one count (fired on "change" when you
+    // tap the NEXT product, i.e. while no field has focus yet) rebuilt the
+    // whole list: the field you had just tapped disappeared, the keyboard
+    // closed and the number you typed next went nowhere.
+    const sig = eventInfo.stockFinal.map((item) => {
+      const prev = prevMap.get(stockKey(item.nombre));
+      return stockKey(item.nombre) + "|" + item.unidad + "|" + (prev && prev.cantidad != null ? prev.cantidad : "");
+    }).join("\n");
     const rows = list.querySelectorAll(".stock-row");
-    const typing = document.activeElement && document.activeElement.tagName === "INPUT" && list.contains(document.activeElement);
-    const sameRows = rows.length === eventInfo.stockFinal.length &&
-      eventInfo.stockFinal.every((item, i) => rows[i].dataset.nombre === stockKey(item.nombre) + "|" + item.unidad);
-    if (typing && sameRows) {
+    if (list.dataset.sig === sig && rows.length === eventInfo.stockFinal.length) {
       eventInfo.stockFinal.forEach((item, i) => {
         const inp = rows[i].querySelector("input");
-        if (inp !== document.activeElement) inp.value = item.cantidad != null ? item.cantidad : "";
+        if (!inp || inp === document.activeElement) return;
+        const v = fmtNumInput(item.cantidad);
+        if (inp.value !== v) inp.value = v;
       });
       return;
     }
     list.__html = null; // force: the DOM may have been patched in place above
     list.innerHTML = html;
-    list.querySelectorAll(".stock-row").forEach((r, i) => {
-      const it = eventInfo.stockFinal[i];
-      r.dataset.nombre = stockKey(it.nombre) + "|" + it.unidad;
-    });
+    list.dataset.sig = sig;
   }
   // − / + : one unit at a time, half a litre for wine and vermut. Blank
   // counts as 0. Shared by the Inventario tab and the event detail sheet.
@@ -2674,7 +2754,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const inp = row.querySelector("input");
       const actual = inp.value !== "" ? parseCantidad(inp.value, item.unidad) : item.cantidad;
       const cantidad = stepCantidad(actual, item.unidad, Number(stepBtn.dataset.step));
-      inp.value = cantidad;
+      inp.value = fmtNumInput(cantidad);
       saveStockFinal(eventInfo.stockFinal.map((it, i) => i === idx ? { ...it, cantidad } : it));
       return;
     }
@@ -2766,10 +2846,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     e.preventDefault();
     if (!db || !currentEventId) { toast("No se puede guardar sin conexión de datos."); return; }
     const concepto = $("ingConcepto").value.trim();
-    const bizum = parseFloat($("ingBizum").value) || 0;
-    const tarjeta = parseFloat($("ingTarjeta").value) || 0;
-    const efectivo = parseFloat($("ingEfectivo").value) || 0;
+    const bizum = parseImporte($("ingBizum").value, true);
+    const tarjeta = parseImporte($("ingTarjeta").value, true);
+    const efectivo = parseImporte($("ingEfectivo").value, true);
     if (!concepto) return;
+    if (!checkNums(["ingBizum", "ingTarjeta", "ingEfectivo"])) return;
     if (bizum <= 0 && tarjeta <= 0 && efectivo <= 0) { toast("Indica un importe en Bizum, Tarjeta o Efectivo."); return; }
     const submitBtn = e.target.querySelector("button[type=submit]");
     submitBtn.disabled = true;
@@ -2800,9 +2881,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const proveedor = $("gastoSuper").value.trim();
     const comprador = $("gastoComprador").value.trim();
     const observaciones = $("gastoObs").value.trim();
-    const importe = parseFloat($("gastoImporte").value);
+    const importe = parseImporte($("gastoImporte").value);
     if (!proveedor) return;
     if (!comprador) { toast("Indica quién compró, para saber a quién reembolsar."); return; }
+    if (!checkNums(["gastoImporte"])) return;
     if (!(importe > 0)) { toast("Indica un importe."); return; }
     const submitBtn = e.target.querySelector("button[type=submit]");
     submitBtn.disabled = true;
@@ -2851,7 +2933,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     syncChips();
     $("editGastoObs").value = g.observaciones || "";
-    $("editGastoImporte").value = g.importe != null ? g.importe : "";
+    $("editGastoImporte").value = fmtImporteInput(g.importe);
     editingGastoPagado = !!g.pagado;
     updateGastoPagadoToggle();
     $("editGastoBackdrop").hidden = false;
@@ -2886,9 +2968,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const proveedor = $("editGastoSuper").value.trim();
     const comprador = $("editGastoComprador").value.trim();
     const observaciones = $("editGastoObs").value.trim();
-    const importe = parseFloat($("editGastoImporte").value);
+    const importe = parseImporte($("editGastoImporte").value);
     if (!proveedor) return;
     if (!comprador) { toast("Indica quién compró, para saber a quién reembolsar."); return; }
+    if (!checkNums(["editGastoImporte"])) return;
     if (!(importe > 0)) { toast("Indica un importe."); return; }
     const submitBtn = e.target.querySelector("button[type=submit]");
     submitBtn.disabled = true;
@@ -2958,7 +3041,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     e.preventDefault();
     if (!db || !pagoCtx) return;
     const persona = $("pagoPersona").value.trim();
-    const importe = round2(parseFloat(String($("pagoImporte").value).replace(",", ".")));
+    if (!checkNums(["pagoImporte"])) return;
+    const importe = parseImporte($("pagoImporte").value);
     const fecha = $("pagoFecha").value || todayISO();
     const nota = $("pagoNota").value.trim();
     if (!persona) { toast("Indica a quién se paga."); return; }
@@ -3034,9 +3118,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $("editIngFecha").value = i.fecha || todayISO();
     fillEventoSelect($("editIngEvento"), editingIngresoEv);
     $("editIngConcepto").value = i.concepto || "";
-    $("editIngBizum").value = i.bizum ? i.bizum : "";
-    $("editIngTarjeta").value = i.tarjeta ? i.tarjeta : "";
-    $("editIngEfectivo").value = i.efectivo ? i.efectivo : "";
+    $("editIngBizum").value = fmtImporteInput(i.bizum);
+    $("editIngTarjeta").value = fmtImporteInput(i.tarjeta);
+    $("editIngEfectivo").value = fmtImporteInput(i.efectivo);
     $("editIngresoBackdrop").hidden = false;
   }
   $("ingresosList").addEventListener("click", (e) => {
@@ -3056,10 +3140,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const fecha = $("editIngFecha").value || todayISO();
     const destino = $("editIngEvento").value || editingIngresoEv;
     const concepto = $("editIngConcepto").value.trim();
-    const bizum = parseFloat($("editIngBizum").value) || 0;
-    const tarjeta = parseFloat($("editIngTarjeta").value) || 0;
-    const efectivo = parseFloat($("editIngEfectivo").value) || 0;
+    const bizum = parseImporte($("editIngBizum").value, true);
+    const tarjeta = parseImporte($("editIngTarjeta").value, true);
+    const efectivo = parseImporte($("editIngEfectivo").value, true);
     if (!concepto) return;
+    if (!checkNums(["editIngBizum", "editIngTarjeta", "editIngEfectivo"])) return;
     if (bizum <= 0 && tarjeta <= 0 && efectivo <= 0) { toast("Indica un importe en Bizum, Tarjeta o Efectivo."); return; }
     const submitBtn = e.target.querySelector("button[type=submit]");
     submitBtn.disabled = true;
@@ -3399,7 +3484,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <div class="stock-row" data-idx="${idx}">
           <div class="stock-name" role="button" tabindex="0" title="Toca para cambiar el nombre o la unidad">${esc(s.nombre)} <span class="edit-mark">✎</span></div>
           <button type="button" class="stock-step" data-step="-1" aria-label="Menos ${esc(s.nombre)}">−</button>
-          <input type="number" inputmode="${s.unidad === "L" ? "decimal" : "numeric"}" min="0" step="${s.unidad === "L" ? "0.1" : "1"}" placeholder="0" value="${s.cantidad != null ? s.cantidad : ""}">
+          <input type="text" class="num-input" inputmode="${s.unidad === "L" ? "decimal" : "numeric"}" autocomplete="off" spellcheck="false" placeholder="0" value="${esc(fmtNumInput(s.cantidad))}">
           <button type="button" class="stock-step" data-step="1" aria-label="Más ${esc(s.nombre)}">+</button>
           <span class="stock-unit">${s.unidad === "L" ? "L" : "uds"}</span>
           <button type="button" class="stock-remove" aria-label="Quitar ${esc(s.nombre)}">✕</button>
@@ -3454,7 +3539,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const inp = row0.querySelector("input");
       const actual = inp.value !== "" ? parseCantidad(inp.value, it0.unidad) : it0.cantidad;
       const cantidad = stepCantidad(actual, it0.unidad, Number(stepBtn.dataset.step));
-      inp.value = cantidad;
+      inp.value = fmtNumInput(cantidad);
       saveEventoDetalleStock(deletingEventoIdx, (ev0.stockFinal || []).map((it, i) => i === i0 ? { ...it, cantidad } : it));
       return;
     }
