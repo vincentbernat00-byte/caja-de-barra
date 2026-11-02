@@ -164,6 +164,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     border-bottom: 1px solid var(--line);
     margin-bottom: 16px;
   }
+  .ver-pill { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 100px; background: var(--amber-ink); color: var(--surface); font-size: 11px; letter-spacing: .02em; text-transform: none; vertical-align: 1px; }
   .eyebrow { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--amber-ink); font-weight: 700; }
   .event-name { font-size: 22px; font-weight: 600; margin-top: 2px; }
   .event-name.warn { color: var(--expense); font-size: 18px; }
@@ -456,7 +457,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="err-banner-title">No se pudo guardar / cargar algo:</div>
     <div id="errBannerList"></div>
   </div>
-  <div class="eyebrow">Caja de barra</div>
+  <div class="eyebrow">Caja de barra <span class="ver-pill" id="verPill" title="Versión de la app que está funcionando en este móvil">v37</span></div>
   <div class="event-name" id="hdrNombre" role="button" tabindex="0" title="Toca para cambiar el nombre, la fecha o el local">Cargando…</div>
   <div class="event-sub"><span id="hdrSub">&nbsp;</span> <button type="button" class="hdr-change" id="btnHdrCambiar">Cambiar evento</button> <button type="button" class="hdr-change" id="btnHdrQuien" hidden></button> <span id="saveChip" class="save-chip" hidden></span> <span id="excelChip" class="save-chip" hidden></span></div>
   <div class="balance-pill">
@@ -1266,8 +1267,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v36-web";
-  const BUILD_NUM = 36; // v35: compared with app/version to tell old tabs to reload
+  const BUILD_VERSION = "v37-web";
+  const BUILD_NUM = 37; // v35: compared with app/version to tell old tabs to reload
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -4573,6 +4574,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   $("formGasto").addEventListener("reset", () => setTimeout(presetComprador, 0));
   renderHdrQuien();
   presetComprador();
+  // v37: the running version, always visible at the very top.
+  $("verPill").textContent = BUILD_VERSION.replace(/-web$/, "");
+  document.title = "Caja de Barra " + $("verPill").textContent;
 
   boot();
 })();
