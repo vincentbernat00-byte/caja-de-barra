@@ -238,6 +238,30 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .per-line .r { font-family: "JetBrains Mono", monospace; white-space: nowrap; text-align: right; }
   nav.tabbar button svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 1.7; }
   nav.tabbar button.active { color: var(--amber-ink); background: var(--amber-soft); }
+  /* v35: 7 tabs must fit a 320–360 px phone */
+  nav.tabbar { gap: 1px; padding-left: 4px; padding-right: 4px; }
+  nav.tabbar button { font-size: 9.5px; letter-spacing: -0.2px; padding: 6px 0; overflow: hidden; }
+  nav.tabbar button .tab-lbl { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---- Historial (v35) ---- */
+  .hist-day { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .4px; margin: 16px 2px 6px; }
+  .hist-card { padding: 11px 13px; }
+  .hist-card.undone { opacity: .6; }
+  .hist-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12.5px; color: var(--ink-soft); }
+  .hist-head b { color: var(--ink); font-size: 13.5px; }
+  .hist-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px; background: var(--line); color: var(--ink-soft); white-space: nowrap; }
+  .hist-tag.undo { background: var(--amber-soft); color: var(--amber-ink); }
+  .hist-lines { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13.5px; }
+  .hist-lines li { padding: 3px 0; overflow-wrap: anywhere; }
+  .hist-lines li small { display: block; color: var(--ink-soft); font-size: 12.5px; }
+  .hist-more summary { cursor: pointer; color: var(--amber-ink); font-weight: 600; font-size: 13px; padding: 3px 0; }
+  .hist-actions { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+  .hist-actions .btn { width: auto; padding: 8px 13px; font-size: 13px; }
+  .hist-filters { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 4px; }
+  .hist-filters .field { flex: 1; margin-bottom: 0; }
+  .update-banner { position: sticky; top: 0; z-index: 30; display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--amber-soft); color: var(--amber-ink); font-weight: 600; font-size: 13.5px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .update-banner[hidden] { display: none; }
+  .update-banner button { background: var(--amber-ink); color: #fff; border: none; border-radius: 8px; padding: 7px 12px; font: inherit; font-weight: 700; cursor: pointer; }
 
   /* ---- Buttons ---- */
   .btn {
@@ -411,6 +435,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   .stock-row .stock-name { cursor: pointer; }
   .stock-row .stock-name .edit-mark { color: var(--ink-faint); font-weight: 400; font-size: 12.5px; }
+  .quien-btns { display: grid; gap: 10px; margin-bottom: 6px; }
+  .quien-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 18px; font-weight: 700; cursor: pointer; }
+  .quien-btn small { font-size: 12px; font-weight: 600; color: var(--amber-ink); }
+  .quien-btn.sel { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber) inset; background: var(--amber-soft); }
+  #quienBackdrop { z-index: 40; }
   .pick-item.sel { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber) inset; }
   .ev-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
   .ev-btns .btn { padding-left: 8px; padding-right: 8px; }
@@ -429,7 +458,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   </div>
   <div class="eyebrow">Caja de barra</div>
   <div class="event-name" id="hdrNombre" role="button" tabindex="0" title="Toca para cambiar el nombre, la fecha o el local">Cargando…</div>
-  <div class="event-sub"><span id="hdrSub">&nbsp;</span> <button type="button" class="hdr-change" id="btnHdrCambiar">Cambiar evento</button> <span id="saveChip" class="save-chip" hidden></span> <span id="excelChip" class="save-chip" hidden></span></div>
+  <div class="event-sub"><span id="hdrSub">&nbsp;</span> <button type="button" class="hdr-change" id="btnHdrCambiar">Cambiar evento</button> <button type="button" class="hdr-change" id="btnHdrQuien" hidden></button> <span id="saveChip" class="save-chip" hidden></span> <span id="excelChip" class="save-chip" hidden></span></div>
   <div class="balance-pill">
     <div>
       <div class="label">Balance de este evento</div>
@@ -438,6 +467,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   </div>
 </header>
 
+<div class="update-banner" id="updateBanner" hidden><span>Hay una versión nueva de la app.</span><button type="button" id="btnUpdateApp">Actualizar</button></div>
 <main>
 
   <!-- ===================== TAB: GASTOS ===================== -->
@@ -570,6 +600,30 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     </div>
   </section>
 
+  <!-- ===================== TAB: HISTORIAL (v35) ===================== -->
+  <section class="tab" id="tab-historial" hidden>
+    <div class="section-title">Historial de cambios</div>
+    <div class="section-hint">Cada cambio queda apuntado aquí: quién, cuándo y qué. <b>Deshacer</b> revierte solo ese cambio. <b>Volver a antes de esto</b> deja todo como estaba justo antes (deshace ese cambio y todos los posteriores). Deshacer también queda apuntado, así que siempre se puede volver a hacer.</div>
+    <div class="card" style="margin-bottom:12px;padding:12px 14px;">
+      <div style="font-weight:600;font-size:14px;margin-bottom:8px;">¿Quién usa este móvil?</div>
+      <div class="chips" id="histQuienChips" style="margin:0;"></div>
+      <div class="section-hint" id="histQuienHint" style="margin:8px 0 0;"></div>
+    </div>
+    <div class="hist-filters">
+      <div class="field">
+        <label for="histFiltroEvento">Evento</label>
+        <select id="histFiltroEvento"><option value="">Todos los eventos</option></select>
+      </div>
+      <div class="field">
+        <label for="histFiltroQuien">Persona</label>
+        <select id="histFiltroQuien"><option value="">Todas</option></select>
+      </div>
+    </div>
+    <div id="histList" style="margin-bottom:12px;"></div>
+    <button class="btn btn-secondary" type="button" id="histMas" hidden style="margin-bottom:16px;">Ver más cambios</button>
+    <div class="section-hint" style="margin-top:4px;">El historial empieza con la versión 35 (2 de noviembre de 2026) y guarda los últimos 300 cambios. Para lo anterior: <a href="https://docs.google.com/spreadsheets/d/1M3fxLHRETIqWpKRynkIyysmdQn6GAqhklBtuf5RTw7k/edit" target="_blank" rel="noopener">hoja «Base de datos»</a> → Archivo → Historial de versiones (solo la cuenta de Vincent).</div>
+  </section>
+
   <!-- ===================== TAB: RESUMEN ===================== -->
   <section class="tab" id="tab-resumen" hidden>
     <div class="section-title">Datos del evento</div>
@@ -654,29 +708,56 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 <nav class="tabbar">
   <button class="active" data-tab="gastos">
     <svg viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M4 16v2a2 2 0 0 0 2 2h2M20 8V6a2 2 0 0 0-2-2h-2M20 16v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3.2"/></svg>
-    Gastos
+    <span class="tab-lbl">Gastos</span>
   </button>
   <button data-tab="ingresos">
     <svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="5.2"/><circle cx="16" cy="12" r="5.2"/></svg>
-    Ingresos
+    <span class="tab-lbl">Ingresos</span>
   </button>
   <button data-tab="inventario">
     <svg viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg>
-    Inventario
+    <span class="tab-lbl">Inventario</span>
   </button>
   <button data-tab="eventos">
     <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>
-    Eventos
+    <span class="tab-lbl">Eventos</span>
   </button>
   <button data-tab="personas">
     <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.8.2 5 2.5 5 5.3"/></svg>
-    Personas
+    <span class="tab-lbl">Personas</span>
   </button>
   <button data-tab="resumen">
     <svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
-    Resumen
+    <span class="tab-lbl">Resumen</span>
+  </button>
+  <button data-tab="historial">
+    <svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4v4h4"/><path d="M12 7.5V12l3 2"/></svg>
+    <span class="tab-lbl">Historial</span>
   </button>
 </nav>
+
+<!-- ===================== SHEET: ¿quién eres? (v36) ===================== -->
+<div class="sheet-backdrop over" id="quienBackdrop" hidden>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">¿Quién eres?</div>
+    <p class="section-hint" style="margin-top:-6px;margin-bottom:14px;">Así queda apuntado en el Historial quién hace cada cambio. Se pregunta cada vez que se abre la app.</p>
+    <div class="quien-btns" id="quienList"></div>
+  </div>
+</div>
+
+<!-- ===================== SHEET: confirmar deshacer (v35) ===================== -->
+<div class="sheet-backdrop over" id="histConfirmBackdrop" hidden>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="histConfirmTitle">¿Deshacer?</div>
+    <div class="section-hint" id="histConfirmText" style="margin-bottom:16px;"></div>
+    <div class="stack">
+      <button class="btn btn-primary" type="button" id="histConfirmOk">Sí, deshacer</button>
+      <button class="btn btn-ghost" type="button" id="histConfirmCancel" style="width:100%;">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===================== SHEET: confirm closing the night ===================== -->
 <div class="sheet-backdrop over" id="closeBackdrop" hidden>
@@ -966,6 +1047,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // Utilities
   // ---------------------------------------------------------------------
   const $ = (id) => document.getElementById(id);
+  const TABS = ["gastos", "ingresos", "inventario", "eventos", "personas", "resumen", "historial"];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const eur = (n) => (Number(n) || 0).toLocaleString("es-ES", { style: "currency", currency: "EUR" });
   const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -1184,7 +1266,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // is answerable at a glance instead of guessed at over chat — a stale
   // tab keeps running whatever JS it loaded, forever, no matter how many
   // new versions get published after it was opened.
-  const BUILD_VERSION = "v34-web";
+  const BUILD_VERSION = "v36-web";
+  const BUILD_NUM = 36; // v35: compared with app/version to tell old tabs to reload
   let db = null, downloads = null, mcp = null;
   let driveReady = false;
   const DRIVE_FILE_TITLE = "Caja de Barra — Registro.xlsx";
@@ -1352,6 +1435,43 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // at once, and a single poll every POLL_MS picks up other phones'
   // changes. This keeps the load on Apps Script to ~1 request per poll per
   // open phone instead of dozens (which Google throttles).
+  // ---- v35: who is using this phone + history helpers ------------------
+  const QUIEN_KEY = "cajaBarra.quien.v1", DISP_KEY = "cajaBarra.dispositivo.v1";
+  function getQuien() { try { return localStorage.getItem(QUIEN_KEY) || ""; } catch (e) { return ""; } }
+  function setQuien(v) { try { localStorage.setItem(QUIEN_KEY, v); } catch (e) { /* private mode */ } }
+  let dispMem = null;
+  function deviceId() {
+    if (dispMem) return dispMem;
+    try { dispMem = localStorage.getItem(DISP_KEY); } catch (e) { /* ignore */ }
+    if (!dispMem) {
+      dispMem = Math.random().toString(36).slice(2, 7);
+      try { localStorage.setItem(DISP_KEY, dispMem); } catch (e) { /* ignore */ }
+    }
+    return dispMem;
+  }
+  const H_NO = "__no__"; // "this field did not exist"
+  const histSkip = (p) => !p || p.indexOf("historial/") === 0 || p.indexOf("app/") === 0;
+  const sameVal = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
+  // One document's change: {path, antes, despues[, campos]}.
+  // antes null = it was created; despues null = it was deleted;
+  // campos = only the changed fields are stored (H_NO = field absent).
+  function histOp(path, before, after) {
+    before = before == null ? null : before;
+    after = after == null ? null : after;
+    if (before === null && after === null) return null;
+    if (before === null) return { path, antes: null, despues: clone(after) };
+    if (after === null) return { path, antes: clone(before), despues: null };
+    const antes = {}, despues = {};
+    let n = 0;
+    new Set([...Object.keys(before), ...Object.keys(after)]).forEach((k) => {
+      if (sameVal(before[k], after[k])) return;
+      antes[k] = k in before ? clone(before[k]) : H_NO;
+      despues[k] = k in after ? clone(after[k]) : H_NO;
+      n++;
+    });
+    return n ? { path, antes, despues, campos: true } : null;
+  }
+
   function makeRemoteDb() {
     let cache = null;         // Map<path, data>: server state + this phone's unsent changes
     let cacheAt = 0;
@@ -1370,7 +1490,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const lsGet = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } };
     const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage full or blocked: keep working in memory */ } };
     let outbox = (() => { const o = lsGet(OUTBOX_KEY); return Array.isArray(o) ? o.filter((e) => e && e.action) : []; })();
-    const saveOutbox = () => lsSet(OUTBOX_KEY, outbox.map((e) => ({ id: e.id, action: e.action, path: e.path, data: e.data, ops: e.ops })));
+    const saveOutbox = () => lsSet(OUTBOX_KEY, outbox.map((e) => ({ id: e.id, action: e.action, path: e.path, data: e.data, ops: e.ops, mergeKey: e.mergeKey })));
     function applyEntry(m, e) {
       const one = (op, path, data) => {
         if (op === "setDoc" || op === "set") m.set(path, clone(data) || {});
@@ -1568,6 +1688,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if (!cache) cache = new Map();
       applyEntry(cache, entry);
       const last = outbox[outbox.length - 1];
+      // v35: quick edits of one item (inventory taps, typing) travel as
+      // "data + its history line" batches; unsent ones are merged too.
+      if (last && !last.inFlight && entry.action === "batch" && last.action === "batch" &&
+          entry.mergeKey && entry.mergeKey === last.mergeKey && mergeBatchOps(last.ops, entry.ops)) {
+        saveOutbox(); notifyAll(); emitLocalWrite(); drain();
+        return Promise.resolve();
+      }
       if (last && !last.inFlight && entry.action !== "batch" && last.path === entry.path && last.action !== "batch") {
         if (entry.action === "updateDoc" && (last.action === "updateDoc" || last.action === "setDoc")) {
           last.data = Object.assign({}, last.data || {}, entry.data || {});
@@ -1581,15 +1708,88 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       drain();
       return Promise.resolve();
     }
+    function mergeBatchOps(old, neu) {
+      if (old.length !== neu.length) return false;
+      const out = [];
+      for (let i = 0; i < old.length; i++) {
+        const a = old[i], b = neu[i];
+        if (a.path !== b.path) return false;
+        if (b.op !== "update") out.push(b);
+        else if (a.op === "delete") return false;
+        else out.push({ op: a.op, path: a.path, data: Object.assign({}, a.data || {}, b.data || {}) });
+      }
+      old.splice(0, old.length, ...out);
+      return true;
+    }
+
+    // ---- Historial (v35) ----------------------------------------------
+    // Every change made from this page is written TOGETHER with one line in
+    // "historial/<id>" (same request, so a change can never exist without
+    // its history line). A line holds, per document touched, what it was
+    // before and after: a whole document when it was created or deleted,
+    // only the fields that changed when it was edited. That is enough to
+    // undo it exactly. Quick successive edits of the same item from the
+    // same phone (inventory taps, typing) are joined into one line.
+    // The Apps Script backend is a generic document store: nothing changes
+    // on the server side.
+    const HIST_JOIN_MS = 3 * 60 * 1000;
+    let histMeta = null;   // label for the NEXT batch (an undo / a roll back)
+    let lastHist = null;   // { hpath, path, base, at, doc }
+    function opsAfter(ops) {
+      const base = new Map(), tmp = new Map();
+      for (const o of ops) {
+        if (base.has(o.path)) continue;
+        const v = cache && cache.has(o.path) ? clone(cache.get(o.path)) : null;
+        base.set(o.path, v);
+        if (v !== null) tmp.set(o.path, clone(v));
+      }
+      applyEntry(tmp, { action: "batch", ops });
+      const out = [];
+      base.forEach((b, p) => out.push({ path: p, before: b, after: tmp.has(p) ? tmp.get(p) : null }));
+      return out;
+    }
+    function histDoc(ops, meta) {
+      const d = { at: new Date().toISOString(), quien: getQuien(), disp: deviceId(), tipo: (meta && meta.tipo) || "cambio", ops };
+      if (meta && meta.deshace) d.deshace = meta.deshace;
+      if (meta && meta.nota) d.nota = meta.nota;
+      return d;
+    }
+    const toOp = (action) => (action === "setDoc" ? "set" : action === "updateDoc" ? "update" : "delete");
     function write(action, path, data) {
-      return queueEntry({ id: newId(), action, path, data: data === undefined ? undefined : (clone(data) || {}) });
+      const entry = { id: newId(), action, path, data: data === undefined ? undefined : (clone(data) || {}) };
+      if (histSkip(path) || histMeta) return queueEntry(entry);
+      const op = entry.action === "deleteDoc" ? { op: "delete", path } : { op: toOp(action), path, data: entry.data };
+      const [r] = opsAfter([op]);
+      if (sameVal(r.before, r.after)) return queueEntry(entry);
+      const now = Date.now();
+      if (lastHist && lastHist.path === path && now - lastHist.at < HIST_JOIN_MS) {
+        const joined = histOp(path, lastHist.base, r.after);
+        const hp = lastHist.hpath;
+        const hop = joined ? { op: "set", path: hp, data: Object.assign({}, lastHist.doc, { at: new Date().toISOString(), ops: [joined] }) } : { op: "delete", path: hp };
+        if (joined) { lastHist.at = now; lastHist.doc = hop.data; } else lastHist = null;
+        return queueEntry({ id: newId(), action: "batch", ops: [op, hop], mergeKey: "h:" + hp });
+      }
+      const h = histOp(path, r.before, r.after);
+      const hp = "historial/" + newId();
+      const doc = histDoc([h]);
+      lastHist = { hpath: hp, path, base: r.before, at: now, doc };
+      return queueEntry({ id: newId(), action: "batch", ops: [op, { op: "set", path: hp, data: doc }], mergeKey: "h:" + hp });
     }
     // Several writes in ONE request, applied by the server under a single
     // lock (action "batch" in Code.gs). ops: [{op:"set"|"update"|"delete", path, data?}]
     function batch(ops) {
       if (!ops || !ops.length) return Promise.resolve();
-      return queueEntry({ id: newId(), action: "batch", ops: ops.map((o) => (o.op === "delete" ? { op: o.op, path: o.path } : { op: o.op, path: o.path, data: clone(o.data) || {} })) });
+      const clean = ops.map((o) => (o.op === "delete" ? { op: o.op, path: o.path } : { op: o.op, path: o.path, data: clone(o.data) || {} }));
+      const meta = histMeta; histMeta = null;
+      const hops = opsAfter(clean).filter((r) => !histSkip(r.path)).map((r) => histOp(r.path, r.before, r.after)).filter(Boolean);
+      if (hops.length) {
+        clean.push({ op: "set", path: "historial/" + newId(), data: histDoc(hops, meta) });
+        lastHist = null;
+      }
+      return queueEntry({ id: newId(), action: "batch", ops: clean });
     }
+    // Runs fn (which must call batch once) with that batch labelled.
+    function withHistMeta(meta, fn) { histMeta = meta; try { return fn(); } finally { histMeta = null; } }
     async function drain() {
       if (draining) return;
       draining = true;
@@ -1676,6 +1876,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       hasSnapshot: () => !!cache,
       snapshotAt: () => snapshotAt,
       onLocalWrite: (f) => { writeListeners.add(f); return () => writeListeners.delete(f); },
+      // v35 (historial)
+      peek: (path) => (cache && cache.has(path) ? clone(cache.get(path)) : null),
+      list: (path) => localList(path),
+      withHistMeta,
     };
   }
 
@@ -1755,10 +1959,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             if (!$("tab-eventos").hidden) loadEventos();
             if (!$("pickEventoBackdrop").hidden) renderPickEvento();
             checkCurrentEventExists();
+            if (!$("tab-historial").hidden) renderHistorial();
+            checkAppVersion();
+            pruneHistorial();
           }, 60);
         });
         // v30: on opening, ask which event the entries are for.
-        maybeAskEvento();
+        if (quienAsked() && getQuien()) maybeAskEvento();
+        else openQuien(maybeAskEvento);
         // Every change made on this phone is pushed to the Drive Excel on
         // its own, once edits pause — no button needed.
         db.onLocalWrite(() => scheduleDriveSync(DRIVE_SYNC_DEBOUNCE_MS));
@@ -1886,8 +2094,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function wasAsked() { try { return !!sessionStorage.getItem(ASKED_KEY); } catch (e) { return false; } }
   function goTab(name) {
     document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
-    ["gastos", "ingresos", "inventario", "eventos", "personas", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
+    TABS.forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
     if (name === "eventos") loadEventos();
+    if (name === "historial") renderHistorial();
   }
   // Every event, most recent first (by date, then creation).
   async function listEventosBasic() {
@@ -2174,7 +2383,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // Jump to Resumen and put the cursor right in the missing field.
   function focusEventFix() {
     document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "resumen"));
-    ["gastos", "ingresos", "inventario", "eventos", "personas", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "resumen"; });
+    TABS.forEach((t) => { $(`tab-${t}`).hidden = t !== "resumen"; });
     const target = (!eventInfo.nombre || !eventInfo.nombre.trim()) ? $("evNombre") : $("evFecha");
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     target.focus();
@@ -2595,8 +2804,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const name = btn.dataset.tab;
-      ["gastos", "ingresos", "inventario", "eventos", "personas", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
+      TABS.forEach((t) => { $(`tab-${t}`).hidden = t !== name; });
       if (name === "eventos") loadEventos();
+      if (name === "historial") renderHistorial();
     });
   });
 
@@ -3618,7 +3828,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         ]);
         switchToEvent(freshId);
         document.querySelectorAll("nav.tabbar button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "gastos"));
-        ["gastos", "ingresos", "inventario", "eventos", "personas", "resumen"].forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
+        TABS.forEach((t) => { $(`tab-${t}`).hidden = t !== "gastos"; });
       } else {
         await deleteEventCompletely(ev.id);
       }
@@ -3982,6 +4192,387 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   });
 
   $("btnDismissErr").addEventListener("click", () => { appErrors = []; renderErrBanner(); });
+
+  // =====================================================================
+  // Historial (v35) — see every change, undo one, or go back to a moment.
+  // =====================================================================
+  const HIST_MAX = 300, HIST_KEEP = 250, HIST_PAGE = 40;
+  const HIDDEN_FIELDS = new Set(["createdAt", "editadoAt", "updatedAt", "inventarioV2"]);
+  const FIELD_LABELS = {
+    nombre: "Nombre", fecha: "Fecha", local: "Local", closedAt: "Cerrado",
+    proveedor: "Qué / dónde", importe: "Importe", comprador: "Compró", observaciones: "Nota", pagado: "Pagado",
+    concepto: "Concepto", bizum: "Bizum", tarjeta: "Tarjeta", efectivo: "Efectivo",
+    persona: "Persona", nota: "Nota", tipo: "Tipo", evento: "Evento",
+  };
+  const MONEY_FIELDS = new Set(["importe", "bizum", "tarjeta", "efectivo"]);
+  let histShown = HIST_PAGE;
+  let histPruned = false;
+
+  function histEntries() {
+    if (!db || !db.list) return [];
+    return db.list("historial")
+      .map((d) => ({ id: d.id, ...(d.data || {}) }))
+      .filter((h) => Array.isArray(h.ops))
+      .sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : (a.id < b.id ? 1 : -1)));
+  }
+  function pathInfo(p) {
+    const s = String(p || "").split("/");
+    if (s[0] === "eventos" && s.length === 2) return { kind: "evento", ev: s[1] };
+    if (s[0] === "eventos" && s.length === 4) return { kind: s[2] === "gastos" ? "gasto" : s[2] === "ingresos" ? "ingreso" : "otro", ev: s[1], id: s[3] };
+    if (s[0] === "pagos" && s.length === 2) return { kind: "pago", id: s[1] };
+    return { kind: "otro" };
+  }
+  // Best available full view of a document mentioned in a history line.
+  function opDoc(op) {
+    const cur = db.peek(op.path);
+    if (!op.campos) return op.despues || op.antes || cur || {};
+    const d = Object.assign({}, cur || {});
+    for (const k of Object.keys(op.despues || {})) if (op.despues[k] !== H_NO) d[k] = op.despues[k];
+    return d;
+  }
+  function evName(evId, fallbackDoc) {
+    const d = db.peek("eventos/" + evId);
+    if (d) return evLabel(d);
+    if (fallbackDoc && (fallbackDoc.nombre || fallbackDoc.fecha)) return evLabel(fallbackDoc);
+    // Deleted event: its name may still be in an older history line.
+    for (const h of histEntries()) for (const o of h.ops) {
+      if (o.path === "eventos/" + evId) { const x = o.antes && !o.campos ? o.antes : o.despues; if (x && x.nombre) return x.nombre; }
+    }
+    return "evento borrado";
+  }
+  function fmtVal(k, v) {
+    if (v === H_NO || v === null || v === undefined || v === "") return "—";
+    if (MONEY_FIELDS.has(k)) return eur(v);
+    if (k === "comprador" || k === "persona") return personaKey(v);
+    if (typeof v === "boolean") return v ? "sí" : "no";
+    if (k === "closedAt") return "sí";
+    if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) return fmtDate(v);
+    if (typeof v === "object") return "…";
+    return String(v);
+  }
+  function stockDiff(a, b) {
+    const ma = new Map((Array.isArray(a) ? a : []).filter((x) => x && x.nombre).map((x) => [stockKey(x.nombre), x]));
+    const mb = new Map((Array.isArray(b) ? b : []).filter((x) => x && x.nombre).map((x) => [stockKey(x.nombre), x]));
+    const out = [];
+    mb.forEach((x, k) => {
+      const y = ma.get(k);
+      if (!y) out.push(`＋ ${x.nombre}`);
+      else if (!sameVal(y.cantidad, x.cantidad)) out.push(`${x.nombre} ${y.cantidad == null ? "—" : fmtCantidad(y.cantidad, y.unidad)} → ${x.cantidad == null ? "—" : fmtCantidad(x.cantidad, x.unidad)}`);
+    });
+    ma.forEach((y, k) => { if (!mb.has(k)) out.push(`✕ ${y.nombre}`); });
+    return out;
+  }
+  function fieldChanges(op) {
+    const out = [];
+    for (const k of Object.keys(op.despues || {})) {
+      if (HIDDEN_FIELDS.has(k)) continue;
+      const a = op.antes[k], b = op.despues[k];
+      if (k === "stockFinal") { const d = stockDiff(a === H_NO ? [] : a, b === H_NO ? [] : b); if (d.length) out.push("Inventario: " + d.join(", ")); continue; }
+      if (k === "closedAt") { out.push(b && b !== H_NO ? "Evento cerrado" : "Evento reabierto"); continue; }
+      out.push(`${FIELD_LABELS[k] || k}: ${fmtVal(k, a)} → ${fmtVal(k, b)}`);
+    }
+    return out;
+  }
+  function docLabel(kind, d) {
+    if (kind === "gasto") return `${d.proveedor || "gasto"} · ${eur(d.importe)}${d.comprador ? " · compró " + personaKey(d.comprador) : ""}`;
+    if (kind === "ingreso") return `${d.concepto || "ingreso"} · ${eur((Number(d.bizum) || 0) + (Number(d.tarjeta) || 0) + (Number(d.efectivo) || 0))}`;
+    if (kind === "pago") return `${personaKey(d.persona)} · ${eur(d.importe)}${d.nota ? " · " + d.nota : ""}`;
+    if (kind === "evento") return `${evLabel(d)}${d.fecha ? " (" + fmtDate(d.fecha) + ")" : ""}`;
+    return "";
+  }
+  // Human sentences for one history line: [{t: title, s: subtitle}]
+  function describeEntry(h) {
+    const lines = [];
+    const ops = h.ops || [];
+    const used = new Set();
+    const NOUN = { gasto: "Gasto", ingreso: "Ingreso", pago: "Reembolso", evento: "Evento" };
+    // A gasto/ingreso moved between events = deleted in one + created in another.
+    ops.forEach((o, i) => {
+      const pi = pathInfo(o.path);
+      if ((pi.kind !== "gasto" && pi.kind !== "ingreso") || o.despues !== null || used.has(i)) return;
+      const j = ops.findIndex((q, k) => k !== i && !used.has(k) && q.antes === null && pathInfo(q.path).kind === pi.kind && pathInfo(q.path).id === pi.id);
+      if (j === -1) return;
+      used.add(i); used.add(j);
+      const to = pathInfo(ops[j].path);
+      lines.push({ t: `${NOUN[pi.kind]} pasado de «${evName(pi.ev)}» a «${evName(to.ev)}»`, s: docLabel(pi.kind, o.antes) });
+    });
+    ops.forEach((o, i) => {
+      if (used.has(i)) return;
+      const pi = pathInfo(o.path);
+      const noun = NOUN[pi.kind] || "Dato";
+      const d = opDoc(o);
+      const where = pi.ev && pi.kind !== "evento" ? ` en «${evName(pi.ev)}»` : "";
+      if (o.antes === null) lines.push({ t: pi.kind === "evento" ? `Evento creado: ${docLabel("evento", d)}` : `${noun} añadido${where}`, s: pi.kind === "evento" ? "" : docLabel(pi.kind, d) });
+      else if (o.despues === null) lines.push({ t: pi.kind === "evento" ? `Evento borrado: ${docLabel("evento", o.antes)}` : `${noun} borrado${where}`, s: pi.kind === "evento" ? "" : docLabel(pi.kind, o.antes) });
+      else {
+        const ch = fieldChanges(o);
+        if (!ch.length) return;
+        const title = pi.kind === "evento" ? `Evento «${evName(pi.ev, d)}»` : `${noun} modificado${where}`;
+        lines.push({ t: title, s: (pi.kind === "evento" ? "" : docLabel(pi.kind, d) + " — ") + ch.join(" · ") });
+      }
+    });
+    if (!lines.length) lines.push({ t: "Cambio interno", s: ops.map((o) => o.path).join(", ") });
+    return lines;
+  }
+  function entryEvents(h) {
+    const s = new Set();
+    for (const o of h.ops || []) { const pi = pathInfo(o.path); if (pi.ev) s.add(pi.ev); }
+    return s;
+  }
+  const quienLabel = (h) => (h.quien ? personaKey(h.quien) : "Sin nombre") ;
+  const horaDe = (iso) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const diaDe = (iso) => new Date(iso).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+
+  // Reverses one recorded change inside `state` (Map path -> doc).
+  function revertOp(op, state) {
+    if (op.antes === null) { state.set(op.path, null); return true; }
+    if (!op.campos) { state.set(op.path, clone(op.antes)); return true; }
+    const cur = state.get(op.path);
+    if (!cur) return false; // edited, then deleted later: nothing to edit back
+    const d = clone(cur);
+    for (const k of Object.keys(op.antes)) { if (op.antes[k] === H_NO) delete d[k]; else d[k] = clone(op.antes[k]); }
+    state.set(op.path, d);
+    return true;
+  }
+  // Was any document of this line changed again afterwards?
+  function laterChanges(h) {
+    const out = [];
+    for (const o of h.ops || []) {
+      const cur = db.peek(o.path);
+      let same;
+      if (o.despues === null) same = cur === null;
+      else if (!o.campos) same = cur !== null && sameVal(cur, o.despues) ;
+      else same = cur !== null && Object.keys(o.despues).every((k) => (o.despues[k] === H_NO ? !(k in cur) : sameVal(cur[k], o.despues[k])));
+      if (!same) out.push(o);
+    }
+    return out;
+  }
+  // Applies the reversal of `entries` (newest first) as ONE batch.
+  async function applyReversal(entries, meta) {
+    const state = new Map();
+    for (const h of entries) for (const o of h.ops) if (!state.has(o.path)) state.set(o.path, db.peek(o.path));
+    const before = new Map([...state].map(([p, v]) => [p, clone(v)]));
+    let skipped = 0;
+    for (const h of entries) for (let i = h.ops.length - 1; i >= 0; i--) if (!revertOp(h.ops[i], state)) skipped++;
+    const ops = [];
+    state.forEach((v, p) => {
+      if (sameVal(v, before.get(p))) return;
+      ops.push(v === null ? { op: "delete", path: p } : { op: "set", path: p, data: v });
+    });
+    if (!ops.length) { toast("No había nada que deshacer: los datos ya están así."); return false; }
+    await db.withHistMeta(meta, () => db.batch(ops));
+    return { count: ops.length, skipped };
+  }
+
+  function histConfirm(title, html, okLabel) {
+    return new Promise((resolve) => {
+      $("histConfirmTitle").textContent = title;
+      $("histConfirmText").innerHTML = html;
+      $("histConfirmOk").textContent = okLabel;
+      $("histConfirmBackdrop").hidden = false;
+      const done = (v) => {
+        $("histConfirmBackdrop").hidden = true;
+        $("histConfirmOk").onclick = null; $("histConfirmCancel").onclick = null; $("histConfirmBackdrop").onclick = null;
+        resolve(v);
+      };
+      $("histConfirmOk").onclick = () => done(true);
+      $("histConfirmCancel").onclick = () => done(false);
+      $("histConfirmBackdrop").onclick = (e) => { if (e.target === $("histConfirmBackdrop")) done(false); };
+    });
+  }
+  function afterReversal() {
+    loadHistoricalData();
+    if (typeof loadEventos === "function" && !$("tab-eventos").hidden) loadEventos();
+    checkCurrentEventExists();
+    renderHistorial();
+  }
+  async function undoEntry(id) {
+    if (!db) { toast("Sin conexión de datos."); return; }
+    const h = histEntries().find((x) => x.id === id);
+    if (!h) return;
+    const lines = describeEntry(h).map((l) => `<li>${esc(l.t)}${l.s ? `<small>${esc(l.s)}</small>` : ""}</li>`).join("");
+    const later = laterChanges(h);
+    const warn = later.length
+      ? `<p style="margin-top:10px;color:var(--expense);font-weight:600;">Ojo: ${later.length === 1 ? "este dato se ha vuelto a cambiar" : "algunos de estos datos se han vuelto a cambiar"} después. Si deshaces, esos cambios posteriores en ${later.length === 1 ? "él" : "ellos"} también se pierden.</p>`
+      : "";
+    const ok = await histConfirm("¿Deshacer este cambio?", `<b>${esc(horaDe(h.at))} · ${esc(quienLabel(h))}</b><ul class="hist-lines">${lines}</ul>${warn}`, "Sí, deshacer");
+    if (!ok) return;
+    try {
+      const r = await applyReversal([h], { tipo: "deshacer", deshace: [h.id], nota: `Deshacer el cambio de las ${horaDe(h.at)} (${quienLabel(h)})` });
+      if (r) toast(r.skipped ? "Deshecho (alguna parte ya no existía)." : "Cambio deshecho. Se puede volver a hacer desde el Historial.");
+      afterReversal();
+    } catch (e) { toastErr("No se pudo deshacer", e); }
+  }
+  async function rollbackTo(id) {
+    if (!db) { toast("Sin conexión de datos."); return; }
+    const all = histEntries();
+    const idx = all.findIndex((x) => x.id === id);
+    if (idx === -1) return;
+    const target = all[idx];
+    const afectados = all.slice(0, idx + 1); // newest first, down to the target
+    const quienes = [...new Set(afectados.map(quienLabel))].join(", ");
+    const ok = await histConfirm(
+      "¿Volver a antes de este cambio?",
+      `Todo queda como estaba el <b>${esc(diaDe(target.at))} a las ${esc(horaDe(target.at))}</b>, justo antes de este cambio.<br><br>Se deshacen <b>${afectados.length} cambio${afectados.length === 1 ? "" : "s"}</b> (de: ${esc(quienes)}). Es reversible: esta vuelta atrás también queda en el Historial.`,
+      `Sí, deshacer ${afectados.length} cambio${afectados.length === 1 ? "" : "s"}`);
+    if (!ok) return;
+    try {
+      const r = await applyReversal(afectados, { tipo: "vuelta", deshace: afectados.map((x) => x.id), nota: `Vuelta a antes del ${fmtDate(target.at.slice(0, 10))} ${horaDe(target.at)} (${afectados.length} cambios)` });
+      if (r) toast(`Hecho: ${afectados.length} cambio${afectados.length === 1 ? "" : "s"} deshecho${afectados.length === 1 ? "" : "s"}.`);
+      afterReversal();
+    } catch (e) { toastErr("No se pudo volver atrás", e); }
+  }
+
+  function renderQuienChips() {
+    const cur = getQuien();
+    $("histQuienChips").innerHTML = PERSONAS_FIJAS.map((n) =>
+      `<button type="button" class="chip${cur === n ? " on" : ""}" data-quien="${esc(n)}">${esc(n)}</button>`).join("");
+    $("histQuienHint").textContent = cur
+      ? `Los cambios hechos desde este móvil se apuntan a nombre de ${cur}.`
+      : "Elige tu nombre: así se ve en el Historial quién hizo cada cambio.";
+  }
+  $("histQuienChips").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-quien]");
+    if (!b) return;
+    elegirQuien(b.dataset.quien);
+  });
+
+  function fillHistFilters(entries) {
+    const selEv = $("histFiltroEvento"), selQ = $("histFiltroQuien");
+    const ev = selEv.value, q = selQ.value;
+    const evIds = new Set();
+    entries.forEach((h) => entryEvents(h).forEach((x) => evIds.add(x)));
+    const evs = [...evIds].map((id) => ({ id, name: evName(id), fecha: (db.peek("eventos/" + id) || {}).fecha || "" }))
+      .sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+    selEv.innerHTML = '<option value="">Todos los eventos</option>' + evs.map((e) => `<option value="${esc(e.id)}">${esc(e.name)}</option>`).join("");
+    selEv.value = evIds.has(ev) ? ev : "";
+    const qs = [...new Set(entries.map(quienLabel))].sort();
+    selQ.innerHTML = '<option value="">Todas</option>' + qs.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+    selQ.value = qs.includes(q) ? q : "";
+  }
+  function renderHistorial() {
+    if (!db) return;
+    renderQuienChips();
+    const all = histEntries();
+    fillHistFilters(all);
+    const fEv = $("histFiltroEvento").value, fQ = $("histFiltroQuien").value;
+    // An entry is undone when an undo that is still in effect points at
+    // it; an undo can itself be undone ("Volver a hacer"). Undos are always
+    // newer than what they undo, so newest-first resolves it in one pass.
+    const undoers = new Map();
+    all.forEach((h) => (h.deshace || []).forEach((x) => { if (!undoers.has(x)) undoers.set(x, []); undoers.get(x).push(h); }));
+    const deshechos = new Map(); // id -> the undo in effect
+    all.forEach((h) => { const u = (undoers.get(h.id) || []).find((x) => !deshechos.has(x.id)); if (u) deshechos.set(h.id, u); });
+    const list = all.filter((h) => (!fEv || entryEvents(h).has(fEv)) && (!fQ || quienLabel(h) === fQ));
+    if (!list.length) {
+      $("histList").innerHTML = `<div class="empty">${all.length ? "Ningún cambio con estos filtros." : "Todavía no hay cambios apuntados. A partir de ahora cada cambio aparece aquí."}</div>`;
+      $("histMas").hidden = true;
+      return;
+    }
+    let html = "", lastDay = "";
+    list.slice(0, histShown).forEach((h) => {
+      const day = diaDe(h.at);
+      if (day !== lastDay) { html += `<div class="hist-day">${esc(day)}</div>`; lastDay = day; }
+      const lines = describeEntry(h);
+      const MAXL = 4;
+      const li = (l) => `<li>${esc(l.t)}${l.s ? `<small>${esc(l.s)}</small>` : ""}</li>`;
+      const body = lines.length > MAXL + 1
+        ? `<ul class="hist-lines">${lines.slice(0, MAXL).map(li).join("")}</ul><details class="hist-more"><summary>y ${lines.length - MAXL} cambios más</summary><ul class="hist-lines">${lines.slice(MAXL).map(li).join("")}</ul></details>`
+        : `<ul class="hist-lines">${lines.map(li).join("")}</ul>`;
+      const undoneBy = deshechos.get(h.id);
+      const tag = h.tipo === "deshacer" || h.tipo === "vuelta"
+        ? `<span class="hist-tag undo">${h.tipo === "vuelta" ? "Vuelta atrás" : "Deshacer"}${undoneBy ? " · anulado" : ""}</span>`
+        : undoneBy ? `<span class="hist-tag">Deshecho ${esc(horaDe(undoneBy.at))}</span>` : "";
+      const nota = h.nota ? `<div class="section-hint" style="margin:4px 0 0;">${esc(h.nota)}</div>` : "";
+      html += `<div class="card hist-card${undoneBy ? " undone" : ""}" data-hid="${esc(h.id)}">
+        <div class="hist-head"><span><b>${esc(horaDe(h.at))}</b> · ${esc(quienLabel(h))}</span>${tag}</div>
+        ${nota}${body}
+        <div class="hist-actions">
+          ${undoneBy ? `<button type="button" class="btn btn-secondary" data-act="redo" data-by="${esc(undoneBy.id)}">Volver a hacer</button>` : `<button type="button" class="btn btn-secondary" data-act="undo">Deshacer</button>`}
+          <button type="button" class="btn btn-ghost" data-act="rollback">Volver a antes de esto</button>
+        </div>
+      </div>`;
+    });
+    $("histList").innerHTML = html;
+    $("histMas").hidden = list.length <= histShown;
+  }
+  $("histList").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const id = b.closest("[data-hid]").dataset.hid;
+    if (b.dataset.act === "undo") undoEntry(id);
+    else if (b.dataset.act === "redo") undoEntry(b.dataset.by); // redo = undo the undo still in effect
+    else rollbackTo(id);
+  });
+  $("histFiltroEvento").addEventListener("change", () => { histShown = HIST_PAGE; renderHistorial(); });
+  $("histFiltroQuien").addEventListener("change", () => { histShown = HIST_PAGE; renderHistorial(); });
+  $("histMas").addEventListener("click", () => { histShown += HIST_PAGE; renderHistorial(); });
+
+  // Keeps the shared history to the last HIST_KEEP lines (the whole
+  // database is re-read every few seconds, so it must stay small).
+  function pruneHistorial() {
+    if (histPruned || !db) return;
+    const all = histEntries();
+    if (all.length <= HIST_MAX) return;
+    histPruned = true;
+    db.batch(all.slice(HIST_KEEP).map((h) => ({ op: "delete", path: "historial/" + h.id }))).catch(() => { histPruned = false; });
+  }
+  // Old tabs keep running old code: tell them a newer version exists.
+  function checkAppVersion() {
+    if (!db || !db.peek) return;
+    const v = db.peek("app/version");
+    if (!v || !(Number(v.build) >= BUILD_NUM)) {
+      db.doc("app/version").set({ build: BUILD_NUM, version: BUILD_VERSION, at: new Date().toISOString() }).catch(() => {});
+    } else if (Number(v.build) > BUILD_NUM) $("updateBanner").hidden = false;
+  }
+  $("btnUpdateApp").addEventListener("click", () => location.reload());
+
+  // ---------------------------------------------------------------------
+  // ¿Quién eres? (v36) — asked every time the app is opened (a phone can
+  // be shared at the bar), before choosing the event. One tap; the last
+  // person is highlighted. Shown in the header, changeable any time.
+  // ---------------------------------------------------------------------
+  const QUIEN_ASKED_KEY = "cajaBarra.quienPreguntado.v1";
+  function quienAsked() { try { return !!sessionStorage.getItem(QUIEN_ASKED_KEY); } catch (e) { return false; } }
+  function markQuienAsked() { try { sessionStorage.setItem(QUIEN_ASKED_KEY, "1"); } catch (e) { /* ignore */ } }
+  let afterQuien = null;
+  function renderHdrQuien() {
+    const q = getQuien();
+    const b = $("btnHdrQuien");
+    b.hidden = !q;
+    b.textContent = q ? `Soy ${q}` : "";
+  }
+  function presetComprador() {
+    const sel = $("gastoComprador"), q = getQuien();
+    if (sel && !sel.value && PERSONAS_FIJAS.includes(q)) sel.value = q;
+  }
+  function openQuien(then) {
+    const cur = getQuien();
+    $("quienList").innerHTML = PERSONAS_FIJAS.map((n) =>
+      `<button type="button" class="quien-btn${n === cur ? " sel" : ""}" data-quien="${esc(n)}">${esc(n)}${n === cur ? "<small>la última vez</small>" : ""}</button>`).join("");
+    afterQuien = then || null;
+    $("quienBackdrop").hidden = false;
+  }
+  function elegirQuien(n) {
+    setQuien(n);
+    markQuienAsked();
+    renderHdrQuien();
+    presetComprador();
+    if (!$("tab-historial").hidden) renderHistorial(); else renderQuienChips();
+    toast(`Hola, ${n}. Tus cambios quedan a tu nombre.`);
+  }
+  $("quienList").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-quien]");
+    if (!b) return;
+    $("quienBackdrop").hidden = true;
+    elegirQuien(b.dataset.quien);
+    const f = afterQuien; afterQuien = null;
+    if (f) f();
+  });
+  $("btnHdrQuien").addEventListener("click", () => openQuien());
+  $("formGasto").addEventListener("reset", () => setTimeout(presetComprador, 0));
+  renderHdrQuien();
+  presetComprador();
 
   boot();
 })();
